@@ -5,14 +5,14 @@
 # off-heap / custom-block allocations (plus owl_gc and zarith_pi as additional
 # allocation-heavy workloads):
 #
-#   alt_ergo_fill       (zarith Z.t custom blocks)
-#   cpdf_merge          (camlpdf Bigarray streams)
-#   cpdf_scale          (camlpdf Bigarray streams)
-#   cpdf_squeeze        (camlpdf Bigarray streams)
-#   liq_video_frames    (Bigarray + finaliser, by design)
-#   pplacer_testsuite   (gsl + Bigarray matrices)
-#   owl_gc              (Bigarray-backed ndarray, finalisers)
-#   zarith_pi           (zarith Z.t custom blocks)
+#   alt_ergo_fill            (zarith Z.t custom blocks)
+#   cpdf_merge               (camlpdf Bigarray streams)
+#   cpdf_scale               (camlpdf Bigarray streams)
+#   cpdf_squeeze             (camlpdf Bigarray streams)
+#   liq_video_frames_pool    (refcounted-pool Bigarrays, ocaml#14533)
+#   pplacer_testsuite        (gsl + Bigarray matrices)
+#   owl_gc                   (Bigarray-backed ndarray, finalisers)
+#   zarith_pi                (zarith Z.t custom blocks)
 #
 # Sweep:
 #   (M, o)  — 7×5 = 35 combos per runtime per bench.
@@ -73,7 +73,7 @@ overrides:
     macro-liquidsoap-lang:     []
     macro-merlin:              []
     macro-jsoo:                []
-    macro-liq-video-frames:    [liq_video_frames_full, liq_video_frames_page, liq_video_frames_first, liq_video_frames_none, liq_video_frames_pool]
+    macro-liq-video-frames:    [liq_video_frames_pool]
     macro-pplacer:             [pplacer_testsuite]
 
 # =============================================================================
