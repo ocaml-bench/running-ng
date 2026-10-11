@@ -358,7 +358,9 @@ Post-conditions and caching:
   compiler refuse to retry** until the sentinel is deleted.
 - `runbms` builds every (benchmark, runtime) pair before the first run and
   **exits 1 before any run** if one failed, listing each with its reason.
-  `--skip-build-failures` runs the rest and never runs a failed one;
+  `--skip-build-failures` runs the rest and never runs a failed one; either way
+  the failures are also written to `build-failures.json` in the run dir (the bench
+  service reads it);
   `--retry-failed-builds` (the bench service) rebuilds despite a sentinel,
   with a warning. `buildbms` exits 1 too.
 - The sentinel holds the compiler's git SHA (`OCaml.get_compiler_identity()`,
