@@ -1,3 +1,6 @@
+import json
+
+from running.command import runbms
 from running.command.runbms import spread, expand_configs
 import pytest
 
@@ -84,3 +87,10 @@ def test_prebuild_rejects_unknown_suite():
     from running.command.runbms import prebuild
     with pytest.raises(KeyError):
         prebuild({"missing": [_Bm("x")]}, {}, ["a"], {"a": _Runtime("a")})
+
+
+def test_build_failures_are_written_for_the_service(tmp_path):
+    runbms.write_build_failures(tmp_path, {("macro-jsoo", "jsoo", "ocaml-trunk"): "exit 1"})
+    data = json.loads((tmp_path / runbms.BUILD_FAILURES).read_text())
+    assert data == {"build_failures": [{"suite": "macro-jsoo", "benchmark": "jsoo",
+                                        "runtime": "ocaml-trunk", "reason": "exit 1"}]}
