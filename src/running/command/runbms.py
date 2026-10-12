@@ -712,6 +712,19 @@ def prebuild(benchmarks, suites, configs: List[str],
     return build_failed
 
 
+#: What failed to build, for tools reading the run dir (the bench service).
+BUILD_FAILURES = "build-failures.json"
+
+
+def write_build_failures(log_dir: Path,
+                         build_failed: Dict[Tuple[str, str, str], str]) -> None:
+    rows = [{"suite": s_, "benchmark": b_, "runtime": r_, "reason": why}
+            for (s_, b_, r_), why in sorted(build_failed.items())]
+    with (log_dir / BUILD_FAILURES).open("w") as f:
+        json.dump({"build_failures": rows}, f, indent=2)
+        f.write("\n")
+
+
 def run(args):
     if args.get("which") != "runbms":
         return False
@@ -876,6 +889,8 @@ def run(args):
                     "SKIP" if skip else "FAILED", suite_name, bm_name, rt_name, why))
             unbuilt.update((s_, b_, c) for (s_, b_, r_) in build_failed
                            for c in configs if runtime_by_config[c].name == r_)
+            if not is_dry_run():
+                write_build_failures(log_dir, build_failed)
             if not skip:
                 print("---\nStopping before any run (--skip-build-failures runs what built).")
                 sys.exit(1)
