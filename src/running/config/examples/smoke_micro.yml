@@ -1,6 +1,6 @@
 # Smoke test of the micro path: two cheap sandmark-sequential benchmarks under OCaml
 # 5.5.1, 1 invocation (~30-60s once the switch and dune builds are warm). Includes micro_base.yml.
-# Run: RUNNING_BENCH_DIR=~/benches CONFIG_FILE=<this file> LOG_DIR=/tmp/smoke_micro bash run_ocaml_bench_gc_sweep.sh
+# Run: RUNNING_BENCH_DIR=~/micro-benches CONFIG_FILE=<this file> LOG_DIR=/tmp/smoke_micro bash run_ocaml_bench_gc_sweep.sh
 
 includes:
   - "../base/ocaml/micro_base.yml"

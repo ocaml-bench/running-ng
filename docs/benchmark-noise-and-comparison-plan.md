@@ -169,6 +169,7 @@ worst-first. The output is a table; no plot needed.
 This is a pure visualization change — it does not fix any benchmark, it
 just tells the bench owner which to look at.
 
+<!-- TODO(docs): the benches repo was renamed to micro-benches (github.com/ocaml-bench/micro-benches, default checkout ../micro-benches); update the references to ~/benches in this file -->
 ### What goes in `~/benches`
 
 The actual fix for an out-of-envelope benchmark lives in that

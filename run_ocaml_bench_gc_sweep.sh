@@ -6,8 +6,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Provision the tools switch, then run `running runbms` on CONFIG_FILE (which builds olly
 # per runtime; OLLY_COMMIT, OLLY_DIR or OLLY_BIN choose which, see running/olly).
 # Usage: CONFIG_FILE=<config> LOG_DIR=<dir> [PYTHON=<venv python>] bash run_ocaml_bench_gc_sweep.sh
-# RUNNING_BENCH_DIR (micro) and RUNNING_MACRO_BENCH_DIR (macro) are synonyms; default ../benches.
-export RUNNING_BENCH_DIR="${RUNNING_BENCH_DIR:-${RUNNING_MACRO_BENCH_DIR:-$(cd "$ROOT_DIR/../benches" 2>/dev/null && pwd || echo "$ROOT_DIR/../benches")}}"
+# RUNNING_BENCH_DIR (micro) and RUNNING_MACRO_BENCH_DIR (macro) are synonyms; default ../micro-benches.
+export RUNNING_BENCH_DIR="${RUNNING_BENCH_DIR:-${RUNNING_MACRO_BENCH_DIR:-$(cd "$ROOT_DIR/../micro-benches" 2>/dev/null && pwd || echo "$ROOT_DIR/../micro-benches")}}"
 export RUNNING_MACRO_BENCH_DIR="${RUNNING_MACRO_BENCH_DIR:-$RUNNING_BENCH_DIR}"
 
 LOG_DIR="${LOG_DIR:-$ROOT_DIR/gc-sweep-logs}"

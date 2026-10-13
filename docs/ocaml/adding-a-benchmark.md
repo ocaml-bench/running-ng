@@ -2,6 +2,7 @@
 
 Benchmarks should be added in a particular repository according to what the benchmark covers. If the benchmark:
 
+<!-- TODO(docs): the benches repo was renamed to micro-benches (github.com/ocaml-bench/micro-benches, default checkout ../micro-benches); update the references on this page (links to ocaml-bench/benches) -->
 - is a self-contained program structured to stress a particular runtime feature, add it to [**benches**](https://github.com/ocaml-bench/benches)
 - is a real-world application with a dependency tree, add it to [**macro-benches**](https://github.com/ocaml-bench/macro-benches), which
   vendors every dependency so all runtimes compile identical source
