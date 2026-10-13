@@ -2,6 +2,7 @@
 
 Configs live under `src/running/config/`:
 
+<!-- TODO(docs): the benches repo was renamed to micro-benches (github.com/ocaml-bench/micro-benches, default checkout ../micro-benches); update the references in this block (~/benches) -->
 ```text
 base/ocaml/micro_base.yml   suites + benchmarks + modifiers for ~/benches
 base/ocaml/macro_base.yml   ditto for ~/macro-benches, plus the runtime-feature `tags:` block

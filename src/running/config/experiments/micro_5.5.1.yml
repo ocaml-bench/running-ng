@@ -1,6 +1,6 @@
 # The full micro suite on OCaml 5.5.1, 5 invocations: the reference numbers for the
 # current stable compiler. Includes micro_base.yml.
-# Run: RUNNING_BENCH_DIR=~/benches RUNNING_REUSE_SWITCHES=1 CONFIG_FILE=<this file> \
+# Run: RUNNING_BENCH_DIR=~/micro-benches RUNNING_REUSE_SWITCHES=1 CONFIG_FILE=<this file> \
 #      LOG_DIR=$PWD/gc-sweep-logs-micro-5.5.1-$(date +%F) bash run_ocaml_bench_gc_sweep.sh
 
 includes:

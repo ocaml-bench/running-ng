@@ -1,7 +1,7 @@
 # GC parameter sweep: one compiler, a 3x3 (s, o) grid, on a few allocation-heavy
 # micro benchmarks. 9 cells per program per invocation, so widen the grid only
 # after `-d` shows an expansion you can afford.
-# Run: RUNNING_BENCH_DIR=~/benches CONFIG_FILE=<this file> \
+# Run: RUNNING_BENCH_DIR=~/micro-benches CONFIG_FILE=<this file> \
 #      LOG_DIR=/tmp/baseline_sweep bash run_ocaml_bench_gc_sweep.sh
 
 includes:

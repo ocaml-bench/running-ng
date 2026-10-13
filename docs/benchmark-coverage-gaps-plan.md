@@ -281,6 +281,7 @@ slicing is a real regression target.
 
 ## Out of scope (gaps we're accepting)
 
+<!-- TODO(docs): the benches repo was renamed to micro-benches (github.com/ocaml-bench/micro-benches, default checkout ../micro-benches); update the references to ~/benches in this file -->
 - **`Gc.alarm` callbacks** — used by `memprof-limits` and a few
   profiling tools; not a macro workload by nature. Best covered by a
   micro in `~/benches/` if anyone cares.

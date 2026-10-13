@@ -13,7 +13,7 @@ hard-won gotchas, and the current list of known-broken files.
   it builds compilers (via `opam-compiler`), builds benchmark binaries per
   runtime, runs them under `perf` + `olly`, sweeps GC parameters, and emits
   data-contract artifacts.
-- Benchmarks live in sibling repos: micro = `~/benches` (13 suites, 196 enabled
+- Benchmarks live in sibling repos: micro = `~/micro-benches` (13 suites, 196 enabled
   programs of 200 declared; 195 of the 196 run on stock OCaml, `oxcaml_prefetch`
   needs an OxCaml runtime), macro = `~/macro-benches` (23 suites declared, 21 with
   programs, 94 enabled; merlin and lavyek disabled). Both are driven through
@@ -21,7 +21,7 @@ hard-won gotchas, and the current list of known-broken files.
   Both repos also carry their own program list (`manifest.yml` /
   `benchmarks/manifest.yml`) with `args` copied verbatim from the matching base
   config here, so they can build and run themselves without this repo.
-  `~/benches/scripts/ci-manifest.py check --running-ng` diffs its manifest
+  `~/micro-benches/scripts/ci-manifest.py check --running-ng` diffs its manifest
   against `micro_base.yml` program-for-program and argument-for-argument — run it
   after touching `micro_base.yml`, since a program in only one of the two is
   either a benchmark that silently never runs or a sweep entry that fails every
@@ -175,7 +175,7 @@ tag filter is *intersection-only* (can't re-enable a program absent from
 - `run_ocaml_bench_gc_sweep.sh`, `build_ocaml_binaries_gc_sweep.sh`,
   `install_deps{,_linux,_macos,_freebsd}.sh`, `scripts/plot_gc_sweep.py`,
   `scripts/portability_probe.sh`, `notebooks/`.
-  The three `install_deps_<os>.sh` clone `benches` and `macro-benches`
+  The three `install_deps_<os>.sh` clone `micro-benches` and `macro-benches`
   **beside this repo** if they are absent, and skip any directory that already
   exists; `BENCHES_DIR` / `MACRO_BENCHES_DIR` redirect them. They install cmake
   and libffi for olly but do not build it. They deliberately do **not** run
@@ -196,11 +196,11 @@ tag filter is *intersection-only* (can't re-enable a program absent from
 
 - Env vars: see the table in `docs/ocaml/running.md`. `RUNNING_BENCH_DIR` and
   `RUNNING_MACRO_BENCH_DIR` are **synonyms**, and **both** launch scripts now
-  export both, with a lazy `../benches` fallback that does not require the
+  export both, with a lazy `../micro-benches` fallback that does not require the
   directory to exist. Until 2026-08-10 only `run_ocaml_bench_gc_sweep.sh` did
   that; `build_ocaml_binaries_gc_sweep.sh` read `RUNNING_BENCH_DIR` alone and
   resolved its fallback **eagerly** under `set -e`, so a macro-only *build* that
-  set only `RUNNING_MACRO_BENCH_DIR` aborted when `~/benches` was absent — and
+  set only `RUNNING_MACRO_BENCH_DIR` aborted when `~/micro-benches` was absent — and
   when it was present, the macro config's `${RUNNING_MACRO_BENCH_DIR}` reached
   the YAML unset. Keep the two blocks identical. The expansion is still the
   trap: `${…}` in a config is read at YAML-load time, so an unset variable gives

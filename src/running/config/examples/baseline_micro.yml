@@ -1,5 +1,5 @@
 # Every micro benchmark on the current stable compiler, one invocation each.
-# Run: RUNNING_BENCH_DIR=~/benches CONFIG_FILE=<this file> \
+# Run: RUNNING_BENCH_DIR=~/micro-benches CONFIG_FILE=<this file> \
 #      LOG_DIR=/tmp/baseline_micro bash run_ocaml_bench_gc_sweep.sh
 
 includes:

@@ -9,6 +9,7 @@ JVM/DaCapo harness; [upstream docs](https://anupli.github.io/running-ng/))
 extended with OCaml runtimes, OCaml benchmark suites, `OCAMLRUNPARAM` sweeps, and
 runtime-events telemetry.
 
+<!-- TODO(docs): the benches repo was renamed to micro-benches (github.com/ocaml-bench/micro-benches, default checkout ../micro-benches); update the references below (table link, clone sentence, RUNNING_BENCH_DIR=../benches example) -->
 It drives two companion benchmark repos:
 
 | Repo | What |
