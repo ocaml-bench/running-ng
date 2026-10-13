@@ -363,6 +363,18 @@ Post-conditions and caching:
   service reads it);
   `--retry-failed-builds` (the bench service) rebuilds despite a sentinel,
   with a warning. `buildbms` exits 1 too.
+- **Builds run in parallel** when every benchmark's tree has `.parallel-builds`
+  at its root (macro-benches does; micro-benches does not, as each program builds in
+  a `_build/` shared across runtimes). `--build-jobs N` (runbms and buildbms)
+  caps it; the default is min(16, cores), and 1 builds one at a time. A build
+  script's programs for one runtime still run in turn in one worker (rungs share
+  that runtime's caches and prefixes). Compiler roots build concurrently
+  whatever the tree, unless `--build-jobs 1`. With more than one job each
+  build's output goes to `<log dir>/build-logs/<benchmark>.<runtime>.log`
+  instead of the console. Measured on monolith (32 cores, cold, dune cache off,
+  2 runtimes x 94 programs): 836 s sequential, 431 s at 16 jobs; infer's chain
+  bounds it, so more jobs do not help. Peak memory is set by the largest single
+  build (OxCaml jsoo, ~20 GB), not by the job count.
 - The sentinel holds the compiler's git SHA (`OCaml.get_compiler_identity()`,
   resolved before its root was built). A sentinel from another compiler,
   or an empty legacy one, is stale: the build reruns with a warning.
