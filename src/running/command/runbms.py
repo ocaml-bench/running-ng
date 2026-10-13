@@ -5,7 +5,7 @@ from running.suite import BenchmarkSuite, is_dry_run
 from running.benchmark import Benchmark, SubprocessrExit
 from running.config import Configuration
 from pathlib import Path
-from running.benchmark import set_retry_failed_builds
+from running.benchmark import set_build_log_dir, set_retry_failed_builds
 from running.util import parse_config_str, system, get_logged_in_users, config_index_to_chr, config_str_encode
 import socket
 from datetime import datetime
@@ -120,6 +120,12 @@ def setup_parser(subparsers):
     f.add_argument(
         "--skip-build-failures", action="store_true",
         help="Run what built instead of stopping before the first run when a build fails",
+    )
+    f.add_argument(
+        "--build-jobs", type=int, default=None,
+        help="Build up to N (benchmark, runtime) pairs at once, and the runtimes' roots "
+             "concurrently (default: min(16, cores) when every benchmark tree has "
+             ".parallel-builds; 1 builds one at a time)",
     )
     f.add_argument(
         "--retry-failed-builds", action="store_true",
@@ -689,27 +695,91 @@ def rsync(log_dir):
 
 
 def prebuild(benchmarks, suites, configs: List[str],
-             runtime_by_config: Dict[str, Runtime]) -> Dict[Tuple[str, str, str], str]:
-    """Build every (benchmark, runtime) pair once; return the failed ones with why."""
-    prepared: Set[Tuple[str, str, str]] = set()
-    build_failed: Dict[Tuple[str, str, str], str] = {}
+             runtime_by_config: Dict[str, Runtime],
+             jobs: int = 1) -> Dict[Tuple[str, str, str], str]:
+    """Build every (benchmark, runtime) pair once, `jobs` at a time; return the
+    failed ones with why."""
+    pairs = {}
     for suite_name, bms in benchmarks.items():
         _ = suites[suite_name]
         for bm in bms:
             for c in configs:
                 runtime = runtime_by_config[c]
-                key = (suite_name, bm.name, runtime.name)
-                if key in prepared or key in build_failed:
-                    continue
-                try:
-                    bm.prepare(runtime)
-                except Exception as e:
-                    logging.warning("Build failed for %s/%s with runtime %s: %s",
-                                    suite_name, bm.name, runtime.name, e)
-                    build_failed[key] = str(e).splitlines()[0] if str(e) else type(e).__name__
-                    continue
-                prepared.add(key)
+                pairs.setdefault((suite_name, bm.name, runtime.name), (bm, runtime))
+    build_failed: Dict[Tuple[str, str, str], str] = {}
+
+    def build(key):
+        bm, runtime = pairs[key]
+        try:
+            bm.prepare(runtime)
+        except Exception as e:
+            logging.warning("Build failed for %s/%s with runtime %s: %s",
+                            key[0], bm.name, runtime.name, e)
+            build_failed[key] = str(e).splitlines()[0] if str(e) else type(e).__name__
+
+    if jobs <= 1:
+        for key in pairs:
+            build(key)
+        return build_failed
+    # A build script's runs for one runtime share that runtime's caches and
+    # prefixes (the rungs of a tool), so they run in turn, in one worker.
+    groups: Dict[Tuple[str, str], List] = {}
+    for key, (bm, runtime) in pairs.items():
+        script = getattr(bm, "_resolve_build_script", None)
+        groups.setdefault((str(script()) if script else bm.name, runtime.name),
+                          []).append(key)
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        list(pool.map(lambda keys: [build(k) for k in keys], groups.values()))
     return build_failed
+
+
+#: A benchmark tree whose build scripts are safe to run in parallel has this at its root.
+PARALLEL_MARKER = ".parallel-builds"
+
+
+def default_build_jobs() -> int:
+    return max(1, min(16, os.cpu_count() or 1))
+
+
+def parallel_safe(bm) -> bool:
+    """True if the benchmark's tree has PARALLEL_MARKER (searched up to its git root)."""
+    d = getattr(bm, "benchmark_dir", None)
+    if d is None:
+        return False
+    here = Path(d).resolve()
+    for p in [here, *here.parents]:
+        if (p / PARALLEL_MARKER).exists():
+            return True
+        if (p / ".git").exists():
+            return False
+    return False
+
+
+def benchmark_build_jobs(requested: Optional[int], benchmarks) -> int:
+    """How many benchmark builds may run at once: in turn unless every tree allows more."""
+    jobs = default_build_jobs() if requested is None else requested
+    if jobs > 1:
+        unsafe = sorted({suite for suite, bms in benchmarks.items()
+                         for bm in bms if not parallel_safe(bm)})
+        if unsafe:
+            logging.info("Building benchmarks one at a time: no %s in the tree of %s",
+                         PARALLEL_MARKER, ", ".join(unsafe))
+            return 1
+    return jobs
+
+
+def prebuild_roots(configuration: Configuration, jobs: int) -> None:
+    """Build the configs' runtime roots concurrently, before resolve_class
+    constructs the runtimes one by one (each then finds its root complete)."""
+    if jobs <= 1:
+        return
+    from concurrent.futures import ThreadPoolExecutor
+    raw = configuration.get("runtimes") or {}
+    used = {c.split("|")[0].strip() for c in (configuration.get("configs") or [])}
+    todo = [(n, raw[n]) for n in sorted(used) if n in raw]
+    with ThreadPoolExecutor(max_workers=min(jobs, len(todo) or 1)) as pool:
+        list(pool.map(lambda nv: Runtime.from_config(nv[0], dict(nv[1])), todo))
 
 
 #: What failed to build, for tools reading the run dir (the bench service).
@@ -793,6 +863,10 @@ def run(args):
                 configuration.save_to_file(fd)
         # The native emitter needs the raw dicts, before resolve_class replaces them.
         _raw_runtimes = dict(configuration.get("runtimes") or {})
+        requested_jobs = args.get("build_jobs")
+        if not is_dry_run():
+            prebuild_roots(configuration, default_build_jobs()
+                           if requested_jobs is None else requested_jobs)
         configuration.resolve_class()
         # With schema_version, contract artifacts go to <log_dir>/contract as the
         # run proceeds; without it, the contract-adapter converts afterwards.
@@ -880,7 +954,11 @@ def run(args):
                 sys.exit(1)
         set_retry_failed_builds(bool(args.get("retry_failed_builds")))
         unbuilt.clear()
-        build_failed = prebuild(benchmarks, suites, configs, runtime_by_config)
+        build_jobs = benchmark_build_jobs(requested_jobs, benchmarks)
+        if build_jobs > 1 and not is_dry_run():
+            set_build_log_dir(log_dir / "build-logs")
+        build_failed = prebuild(benchmarks, suites, configs, runtime_by_config,
+                                jobs=build_jobs)
         if build_failed:
             skip = bool(args.get("skip_build_failures"))
             print("\n--- Build failures ({}) ---".format(len(build_failed)))
