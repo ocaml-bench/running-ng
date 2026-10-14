@@ -37,7 +37,7 @@ hard-won gotchas, and the current list of known-broken files.
 
 - **Do not comment on PRs, or add to PRs, unless explicitly asked to.**
 - **No "Claude"/Anthropic/`Co-Authored-By: Claude` in commit messages.**
-- **Remote is `origin = github.com/udesou/running-ng`** (a personal fork).
+- **Remote is `origin = github.com/ocaml-bench/running-ng`**.
   Default working branch is **`adding-ocaml-support`** (all the OCaml support;
   it is also `origin/HEAD`); `master` is the upstream JVM/DaCapo lineage.
   Commit/push only when asked.
@@ -324,7 +324,7 @@ tag filter is *intersection-only* (can't re-enable a program absent from
 - **Overlays:** jsont and bytesrw >= 0.4 have no dune port, so they come from
   their release tarballs (`OVERLAY_SOURCES`) with the dune files in
   `olly/overlays/`. A re-lock refuses an olly whose constraint on either changed.
-- **Patches** (`olly/patches/`, all meant to go upstream, udesou/running-ng#36):
+- **Patches** (`olly/patches/`, all meant to go upstream, ocaml-bench/running-ng#36):
   hdr_histogram's ctypes stanza cannot find ctypes' headers when ctypes is
   vendored; ctypes needs an eta-expansion on OxCaml; olly's 5.3/5.4 counter
   shim names `EV_C_MAJOR_ALLOCATED_WORDS`, which OxCaml (reporting `5.4.0+ox`)
