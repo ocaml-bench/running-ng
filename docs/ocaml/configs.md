@@ -3,7 +3,7 @@
 Configs live under `src/running/config/`:
 
 ```text
-base/ocaml/micro_base.yml   suites + benchmarks + modifiers for ~/benches
+base/ocaml/micro_base.yml   suites + benchmarks + modifiers for ~/micro-benches
 base/ocaml/macro_base.yml   ditto for ~/macro-benches, plus the runtime-feature `tags:` block
 examples/                   the baseline configs to copy from, plus smoke tests
 experiments/                one file per real experiment

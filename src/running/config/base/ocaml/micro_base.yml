@@ -1,5 +1,5 @@
 # Micro/multicore benchmark base: sandmark-derived suites under ${RUNNING_BENCH_DIR}
-# (~/benches), the standard modifiers (perf groups, olly, OCAMLRUNPARAM templates) and
+# (~/micro-benches), the standard modifiers (perf groups, olly, OCAMLRUNPARAM templates) and
 # the enabled-benchmark list. Experiments include it with
 #   includes: ["../base/ocaml/micro_base.yml"]
 # and define runtimes, configs, config_sweep and invocations themselves.
@@ -556,7 +556,7 @@ suites:
         args: "2 1000000 1000"
         ocamlrunparam: "d=3"
       # contrast disabled: camlimages 5.0.5 does not build on OCaml >= 5.4 ("ld: final
-      # link failed: bad value"). Source is still in ~/benches/with_packages/sauvola.
+      # link failed: bad value"). Source is still in ~/micro-benches/with_packages/sauvola.
       # test_lwt is OxCaml-incompatible (lwt.unix locality error).
       test_lwt:
         path: "${RUNNING_BENCH_DIR}/with_packages/valet"

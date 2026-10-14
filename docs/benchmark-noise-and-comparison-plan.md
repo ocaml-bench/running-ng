@@ -169,12 +169,12 @@ worst-first. The output is a table; no plot needed.
 This is a pure visualization change — it does not fix any benchmark, it
 just tells the bench owner which to look at.
 
-### What goes in `~/benches`
+### What goes in the benchmark repos
 
 The actual fix for an out-of-envelope benchmark lives in that
-benchmark's input args / data file in `~/benches`. Each fix is its own
+benchmark's input args / data file in `~/micro-benches` or `~/macro-benches`. Each fix is its own
 small project owned by whoever maintains that benchmark. We track them
-as a list in `~/benches/CALIBRATION_TODO.md` (or similar) seeded from
+as a list in a `CALIBRATION_TODO.md` (or similar) seeded from
 the notebook's flagged candidates. Top-of-list candidates from this
 run:
 
@@ -367,7 +367,7 @@ dedicated-runner timeline becomes more urgent.
    benchmarks are credibly bench-content issues, not machine noise.
 5. **Issue 1 stage 2** (`comparisons:` schema + running-ng `meta.yml`
    materialisation + loader change). One day.
-6. **Issue 2 calibration** of individual benchmarks in `~/benches`.
+6. **Issue 2 calibration** of individual benchmarks in the benchmark repos.
    Per-benchmark, owned by bench authors.
 7. **Issue 3 stage C** (kernel cmdline isolation). Schedule
    permitting; otherwise carry as future work for the dedicated runner.

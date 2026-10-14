@@ -13,7 +13,7 @@ It drives two companion benchmark repos:
 
 | Repo | What |
 |---|---|
-| [**benches**](https://github.com/ocaml-bench/benches) | sandmark-derived microbenchmarks (sequential, multicore, effects, numerical) |
+| [**micro-benches**](https://github.com/ocaml-bench/micro-benches) | sandmark-derived microbenchmarks (sequential, multicore, effects, numerical) |
 | [**macro-benches**](https://github.com/ocaml-bench/macro-benches) | real-world OCaml applications in one vendored dune monorepo (menhir, coq, alt-ergo, frama-c, cpdf, jsoo, ...)|
 
 ## Quick start
@@ -26,7 +26,7 @@ bash install_deps.sh
 
 Auto-detects the OS and delegates to `install_deps_linux.sh` (apt),
 `install_deps_macos.sh` (Homebrew) or `install_deps_freebsd.sh` (pkg). It
-installs system packages, opam 2.2+, a tools switch, `pyyaml`, and clones `benches` and
+installs system packages, opam 2.2+, a tools switch, `pyyaml`, and clones `micro-benches` and
 `macro-benches` as siblings, skipping any that already exists. For `olly`, running-ng
 fetches the commit it pins for `runtime_events_tools` and builds it with each runtime's
 compiler the first time a run needs it.
@@ -44,7 +44,7 @@ specificing which set of benchmarks to run.
 
 ```bash
 # every micro benchmark, one invocation each
-RUNNING_BENCH_DIR=../benches \
+RUNNING_BENCH_DIR=../micro-benches \
 CONFIG_FILE=src/running/config/examples/baseline_micro.yml \
 LOG_DIR=/tmp/baseline_micro \
   bash run_ocaml_bench_gc_sweep.sh
