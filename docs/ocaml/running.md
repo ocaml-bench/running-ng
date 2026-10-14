@@ -87,10 +87,9 @@ The `memtrace_*` files appear only under a `MemtraceAttach` modifier, see
 
 ## Environment variables
 
-<!-- TODO(docs): the benches repo was renamed to micro-benches (github.com/ocaml-bench/micro-benches, default checkout ../micro-benches); update the references in this table (`../benches` default) -->
 | Variable | Default | Meaning |
 |---|---|---|
-| `RUNNING_BENCH_DIR` | `../benches` beside this repo | root of the microbenchmark repo. Synonym of `RUNNING_MACRO_BENCH_DIR` in `run_ocaml_bench_gc_sweep.sh`; resolved eagerly (must exist) only by `build_ocaml_binaries_gc_sweep.sh`. |
+| `RUNNING_BENCH_DIR` | `../micro-benches` beside this repo | root of the microbenchmark repo. Synonym of `RUNNING_MACRO_BENCH_DIR`. |
 | `RUNNING_MACRO_BENCH_DIR` | falls back to `RUNNING_BENCH_DIR` | root of the `macro-benches` monorepo. Required by any config including `base/ocaml/macro_base.yml`. |
 | `CONFIG_FILE` | `src/running/config/examples/baseline_micro.yml` | the experiment to run |
 | `LOG_DIR` | `<repo>/gc-sweep-logs` | where run directories are created |

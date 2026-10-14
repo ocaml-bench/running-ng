@@ -2,8 +2,7 @@
 
 Benchmarks should be added in a particular repository according to what the benchmark covers. If the benchmark:
 
-<!-- TODO(docs): the benches repo was renamed to micro-benches (github.com/ocaml-bench/micro-benches, default checkout ../micro-benches); update the references on this page (links to ocaml-bench/benches) -->
-- is a self-contained program structured to stress a particular runtime feature, add it to [**benches**](https://github.com/ocaml-bench/benches)
+- is a self-contained program structured to stress a particular runtime feature, add it to [**micro-benches**](https://github.com/ocaml-bench/micro-benches)
 - is a real-world application with a dependency tree, add it to [**macro-benches**](https://github.com/ocaml-bench/macro-benches), which
   vendors every dependency so all runtimes compile identical source
 
@@ -21,7 +20,7 @@ packages on `PATH`) and then run `<name>.build.sh` in the benchmark directory, p
 | `RUNNING_OCAML_RUNTIME_NAME` | runtime identifier, e.g. `ocaml-5.4.1` | `runtime` |
 | `RUNNING_OCAML_SWITCH` | opam switch name, when there is one | unset |
 
-See the examples inside [**benches**](https://github.com/ocaml-bench/benches) and [**macro-benches**](https://github.com/ocaml-bench/macro-benches) on how to 
+See the examples inside [**micro-benches**](https://github.com/ocaml-bench/micro-benches) and [**macro-benches**](https://github.com/ocaml-bench/macro-benches) on how to 
 write your own `<name>.build.sh` file.
 
 ## 2. Register it in a suite
