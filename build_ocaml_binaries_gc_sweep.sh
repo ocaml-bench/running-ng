@@ -7,7 +7,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # RUNNING_BENCH_DIR (micro configs) and RUNNING_MACRO_BENCH_DIR (macro configs) are
 # synonyms; both must be exported so a config of either kind resolves its paths.
-export RUNNING_BENCH_DIR="${RUNNING_BENCH_DIR:-${RUNNING_MACRO_BENCH_DIR:-$(cd "$ROOT_DIR/../benches" 2>/dev/null && pwd || echo "$ROOT_DIR/../benches")}}"
+export RUNNING_BENCH_DIR="${RUNNING_BENCH_DIR:-${RUNNING_MACRO_BENCH_DIR:-$(cd "$ROOT_DIR/../micro-benches" 2>/dev/null && pwd || echo "$ROOT_DIR/../micro-benches")}}"
 export RUNNING_MACRO_BENCH_DIR="${RUNNING_MACRO_BENCH_DIR:-$RUNNING_BENCH_DIR}"
 CONFIG_FILE="${CONFIG_FILE:-$ROOT_DIR/src/running/config/examples/baseline_micro.yml}"
 PYTHONPATH="$ROOT_DIR/src"

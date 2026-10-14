@@ -18,7 +18,7 @@ fi
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "$ROOT_DIR/.." && pwd)"
-BENCHES_DIR="${BENCHES_DIR:-$PARENT_DIR/benches}"
+BENCHES_DIR="${BENCHES_DIR:-$PARENT_DIR/micro-benches}"
 MACRO_BENCHES_DIR="${MACRO_BENCHES_DIR:-$PARENT_DIR/macro-benches}"
 # Not "5.4.0": this is the name running.switches and the FreeBSD installer declare.
 OPAM_SWITCH="${OPAM_SWITCH:-running-ng-tools}"
@@ -207,7 +207,7 @@ BUILD_TOOLS=(
     processor   # ocaml-processor-dump topology for CpuPin and the manifest; optional
 )
 
-# Pre-warm only: the ~/benches build scripts install their own deps; this speeds up first runs.
+# Pre-warm only: the ~/micro-benches build scripts install their own deps; this speeds up first runs.
 BENCH_PKGS=(
     domainslib
     zarith num              # zarith, benchmarksgame (pidigits5, binarytrees5)
@@ -251,7 +251,7 @@ ok "pyyaml installed"
 # 7. Benchmarks
 step "Checking benchmark repositories"
 
-clone_if_missing https://github.com/ocaml-bench/benches.git "$BENCHES_DIR"
+clone_if_missing https://github.com/ocaml-bench/micro-benches.git "$BENCHES_DIR"
 clone_if_missing https://github.com/ocaml-bench/macro-benches.git "$MACRO_BENCHES_DIR"
 
 # 8. Verify

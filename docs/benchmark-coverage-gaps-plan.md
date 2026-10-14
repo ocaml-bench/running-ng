@@ -282,8 +282,7 @@ slicing is a real regression target.
 ## Out of scope (gaps we're accepting)
 
 - **`Gc.alarm` callbacks** — used by `memprof-limits` and a few
-  profiling tools; not a macro workload by nature. Best covered by a
-  micro in `~/benches/` if anyone cares.
+  profiling tools; not a macro workload by nature.
 - **Polling-points / safe-points** — mostly an Eio-internal concern
   and intertwined with the effect handler. Hard to isolate as a
   macro.

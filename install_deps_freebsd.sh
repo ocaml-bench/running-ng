@@ -17,7 +17,7 @@ OPAM_SWITCH="${OPAM_SWITCH:-running-ng-tools}"
 OCAML_VERSION="${OCAML_VERSION:-5.4.0}"
 LOCAL_BIN="${LOCAL_BIN:-$HOME/.local/bin}"
 PARENT_DIR=$(cd "$ROOT_DIR/.." && pwd)
-BENCHES_DIR="${BENCHES_DIR:-$PARENT_DIR/benches}"
+BENCHES_DIR="${BENCHES_DIR:-$PARENT_DIR/micro-benches}"
 MACRO_BENCHES_DIR="${MACRO_BENCHES_DIR:-$PARENT_DIR/macro-benches}"
 
 CHECK_ONLY=0
@@ -234,7 +234,7 @@ ok "opam compiler plugin resolves"
 
 # 5. Benchmarks
 step "Checking the benchmark repositories"
-clone_if_missing https://github.com/ocaml-bench/benches.git "$BENCHES_DIR"
+clone_if_missing https://github.com/ocaml-bench/micro-benches.git "$BENCHES_DIR"
 clone_if_missing https://github.com/ocaml-bench/macro-benches.git "$MACRO_BENCHES_DIR"
 
 # 6. Summary
