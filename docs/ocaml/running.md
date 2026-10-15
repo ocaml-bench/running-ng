@@ -50,7 +50,13 @@ as `running <cmd>`), which is how the less common ones are used.
 | `minheap CONFIG RESULT.yml [-a N]` | binary-search the smallest heap each benchmark completes in. MMTk only. Resumable. |
 | `adapt RUN_DIR` | convert a legacy (pre-`schema_version`) run into data-contract artifacts. |
 | `fillin`, `log_preprocessor` | inherited from upstream. |
-<!-- TODO(docs): runbms and buildbms now build in parallel when every benchmark tree has a .parallel-builds file at its root (macro-benches does, micro-benches does not): up to min(16, cores) builds at once, and the runtimes' compiler roots concurrently. `--build-jobs N` caps it, 1 builds one at a time. Parallel builds write each build's output to <log dir>/build-logs/ instead of the console. -->
+
+`runbms` and `buildbms` build benchmarks in parallel when every benchmark tree
+has a `.parallel-builds` file at its root (macro-benches does, micro-benches does
+not): up to min(16, cores) builds at once, with the runtimes' compiler roots
+built concurrently. `--build-jobs N` sets the limit; `--build-jobs 1` builds one
+at a time. Parallel builds write each build's output to `<log dir>/build-logs/`
+instead of the console.
 
 ## What a run produces
 
