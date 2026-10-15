@@ -7,7 +7,9 @@ from running.config import Configuration
 from pathlib import Path
 from running.util import parse_config_str
 from running.runtime import Runtime
-from running.command.runbms import expand_configs
+from running.command.runbms import (benchmark_build_jobs, default_build_jobs,
+                                    expand_configs, prebuild, prebuild_roots)
+from running.benchmark import set_build_log_dir
 import os
 
 logger = logging.getLogger(__name__)
@@ -20,6 +22,9 @@ def setup_parser(subparsers):
     )
     parser.set_defaults(which="buildbms")
     parser.add_argument("CONFIG", type=Path, help="Configuration file")
+    parser.add_argument("--build-jobs", type=int, default=None,
+                        help="build up to N (benchmark, runtime) pairs at once "
+                             "(default as for runbms)")
 
 
 def run(args) -> bool:
@@ -31,6 +36,8 @@ def run(args) -> bool:
 
     config_path = args["CONFIG"]
     configuration = Configuration.from_file(Path(os.getcwd()), config_path)
+    requested = args.get("build_jobs")
+    prebuild_roots(configuration, default_build_jobs() if requested is None else requested)
     configuration.resolve_class()
 
     suites = configuration.get("suites")
@@ -53,32 +60,15 @@ def run(args) -> bool:
           f"{', '.join(unique_runtimes.keys())}")
     print()
 
-    prepared: Set[Tuple[str, str, str]] = set()
-    build_failed: Set[Tuple[str, str, str]] = set()
-    build_count = 0
-
-    for suite_name, bms in benchmarks.items():
-        _ = suites[suite_name]
-        for bm in bms:
-            for c in configs:
-                runtime = runtime_by_config[c]
-                key = (suite_name, bm.name, runtime.name)
-                if key in prepared or key in build_failed:
-                    continue
-                build_count += 1
-                print(f"  [{build_count}] {suite_name}/{bm.name} [{runtime.name}] ... ",
-                      end="", flush=True)
-                try:
-                    if not is_dry_run():
-                        bm.prepare(runtime)
-                    print("OK")
-                except Exception as e:
-                    print(f"FAILED")
-                    logging.warning("  %s", e)
-                    build_failed.add(key)
-                    continue
-                prepared.add(key)
-
+    jobs = benchmark_build_jobs(requested, benchmarks)
+    if jobs > 1:
+        set_build_log_dir(Path(os.environ.get("LOG_DIR", "build-logs")) / "build-logs")
+    failed_why = prebuild(benchmarks, suites, configs, runtime_by_config, jobs=jobs)
+    build_failed: Set[Tuple[str, str, str]] = set(failed_why)
+    prepared: Set[Tuple[str, str, str]] = {
+        (s_, bm.name, runtime_by_config[c].name)
+        for s_, bms in benchmarks.items() for bm in bms for c in configs
+    } - build_failed
     print()
     print(f"--- Build summary ---")
     print(f"  Succeeded: {len(prepared)}")

@@ -26,6 +26,14 @@ from enum import Enum
 import pty
 
 _retry_failed_builds = False
+#: When set, each build's output goes to <dir>/<benchmark>.<runtime>.log
+#: (parallel builds would interleave it on the console).
+_build_log_dir: Optional[Path] = None
+
+
+def set_build_log_dir(d: Optional[Path]) -> None:
+    global _build_log_dir
+    _build_log_dir = d
 
 
 def set_retry_failed_builds(v: bool) -> None:
@@ -832,7 +840,19 @@ class OCamlBuiltBinaryBenchmark(Benchmark):
         cmd.extend(self.build_args)
         cmd = list(runtime.get_command_prefix()) + cmd
         logging.info("Building OCaml benchmark %s with command: %s", self.name, " ".join(cmd))
-        subprocess.run(cmd, cwd=str(self.benchmark_dir), env=env, check=True)
+        if _build_log_dir is None:
+            subprocess.run(cmd, cwd=str(self.benchmark_dir), env=env, check=True)
+        else:
+            _build_log_dir.mkdir(parents=True, exist_ok=True)
+            log = _build_log_dir / "{}.{}.log".format(self.name, runtime.name)
+            with log.open("wb") as fh:
+                p = subprocess.run(cmd, cwd=str(self.benchmark_dir), env=env,
+                                   stdout=fh, stderr=subprocess.STDOUT)
+            if p.returncode != 0:
+                tail = log.read_bytes().decode(errors="replace").splitlines()[-20:]
+                logging.warning("Build of %s [%s] failed; last lines of %s:\n%s",
+                                self.name, runtime.name, log, "\n".join(tail))
+                raise subprocess.CalledProcessError(p.returncode, cmd)
 
         if out_binary.exists():
             return
