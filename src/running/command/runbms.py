@@ -204,7 +204,7 @@ def get_hfacs(heap_range: int, spread_factor: int, N: int, ns: List[int]) -> Lis
 _native_emitter = None
 
 
-def run_benchmark_with_config(c: str, b: Benchmark, runbms_dir: Path, size: Optional[int], fd: Optional[BinaryIO], sidecar_paths: Optional[Dict[str, Path]] = None, memtrace_path: Optional[Path] = None) -> Tuple[bytes, SubprocessrExit]:
+def run_benchmark_with_config(c: str, b: Benchmark, runbms_dir: Path, size: Optional[int], fd: Optional[BinaryIO], sidecar_paths: Optional[Dict[str, Path]] = None, memtrace_path: Optional[Path] = None) -> Tuple[bytes, SubprocessrExit, Optional[int]]:
     runtime, mods = parse_config_str(configuration, c)
     mod_b = b.attach_modifiers(mods)
     if size is not None:
@@ -243,7 +243,7 @@ def run_benchmark_with_config(c: str, b: Benchmark, runbms_dir: Path, size: Opti
                     jf.write(b"\n")
         except (json.JSONDecodeError, ValueError):
             pass
-    return output, exit_status
+    return output, exit_status, mod_b.last_returncode
 
 
 def get_filename_no_ext(bm: Benchmark, hfac: Optional[float], size: Optional[int], config: str) -> str:
@@ -342,10 +342,36 @@ def mark_cell_complete(log_dir: Path, log_filename: str) -> None:
         f.write(log_filename + "\n")
 
 
+#: Invocations that ran and failed, for tools reading the run dir (the bench service).
+RUN_FAILURES = "run-failures.json"
+
+
+def read_run_failures(log_dir: Path) -> List[Dict[str, Any]]:
+    p = log_dir / RUN_FAILURES
+    if not p.exists():
+        return []
+    return json.loads(p.read_text())["run_failures"]
+
+
+def write_run_failures(log_dir: Path, rows: List[Dict[str, Any]]) -> None:
+    tmp = log_dir / (RUN_FAILURES + ".tmp")
+    with tmp.open("w") as f:
+        json.dump({"run_failures": rows}, f, indent=2)
+        f.write("\n")
+    tmp.replace(log_dir / RUN_FAILURES)
+
+
+def record_run_failure(log_dir: Path, row: Dict[str, Any]) -> None:
+    write_run_failures(log_dir, read_run_failures(log_dir) + [row])
+
+
 def discard_partial_cell(log_dir: Path, bm: Benchmark, hfac: Optional[float],
                          size: Optional[int], config: str) -> None:
     """Remove what an interrupted session left of a cell, so it reruns cleanly."""
     stem = get_filename_no_ext(bm, hfac, size, config)
+    failures = read_run_failures(log_dir)
+    if any(r["log"] == stem + ".log" for r in failures):
+        write_run_failures(log_dir, [r for r in failures if r["log"] != stem + ".log"])
     names = [stem + ".log"] + [get_tool_json_filename(t, bm, hfac, size, config)
                                for t in ("olly", "perf")]
     leftovers = [log_dir / n for n in names] + [log_dir / (n + ".gz") for n in names]
@@ -537,6 +563,7 @@ def run_one_benchmark(
         logging.warning("More than one user logged in: {}".format(
             " ".join(logged_in_users)))
     ever_ran = [False] * len(configs)
+    failed = [False] * len(configs)
     already_complete = [False] * len(configs)
     complete_cells = read_complete_cells(log_dir) if resume else None
     for c in configs:
@@ -583,16 +610,27 @@ def run_one_benchmark(
             memtrace_path = log_dir / get_memtrace_filename(bm, hfac, size, c, i)
             logging.debug("Running with log filename {}".format(log_filename))
             runtime, mods = parse_config_str(configuration, c)
+
+            def note_failure(kind: str, reason: str, returncode: Optional[int] = None) -> None:
+                failed[j] = True
+                if not is_dry_run():
+                    record_run_failure(log_dir, {
+                        "suite": bm.suite_name, "benchmark": bm.name,
+                        "runtime": runtime.name, "config": c, "invocation": i,
+                        "kind": kind, "returncode": returncode, "reason": reason,
+                        "log": log_filename})
+
+            returncode: Optional[int] = None
             try:
                 if is_dry_run():
-                    output, exit_status = run_benchmark_with_config(
+                    output, exit_status, _ = run_benchmark_with_config(
                         c, bm, runbms_dir, size, None
                     )
                     assert exit_status is SubprocessrExit.Dryrun
                 else:
                     fd: BinaryIO
                     with (log_dir / log_filename).open("ab") as fd:
-                        output, exit_status = run_benchmark_with_config(
+                        output, exit_status, returncode = run_benchmark_with_config(
                             c, bm, runbms_dir, size, fd,
                             sidecar_paths=sidecar_paths,
                             memtrace_path=memtrace_path,
@@ -615,6 +653,7 @@ def run_one_benchmark(
                     bm_name, c, e,
                 )
                 print("X", end="", flush=True)
+                note_failure("exception", str(e))
                 for p in plugins.values():
                     p.end_config(hfac, size, bm, i, c, j, False)
                 continue
@@ -623,14 +662,18 @@ def run_one_benchmark(
             if exit_status is SubprocessrExit.Timeout:
                 timeout_count[c] += 1
                 print(".", end="", flush=True)
+                note_failure("timeout", "timed out after {}s".format(bm.timeout))
             elif exit_status is SubprocessrExit.Error:
                 print(".", end="", flush=True)
+                note_failure("oom" if runtime.is_oom(output) else "error",
+                             "exit {}".format(returncode), returncode)
             elif exit_status is SubprocessrExit.Normal:
                 if suite.is_passed(output):
                     config_passed = True
                     print(config_index_to_chr(j), end="", flush=True)
                 else:
                     print(".", end="", flush=True)
+                    note_failure("check", "output check failed", returncode)
             elif exit_status is SubprocessrExit.Dryrun:
                 print(".", end="", flush=True)
             else:
@@ -644,7 +687,8 @@ def run_one_benchmark(
         p.end_benchmark(hfac, size, bm)
     for j, c in enumerate(configs):
         log_filename = get_filename(bm, hfac, size, c)
-        if not is_dry_run() and ever_ran[j] and not already_complete[j]:
+        # A failed cell stays incomplete, so --resume reruns it.
+        if not is_dry_run() and ever_ran[j] and not already_complete[j] and not failed[j]:
             mark_cell_complete(log_dir, log_filename)
         if not is_dry_run() and compress_logs and ever_ran[j]:
             compress_log_file(log_dir / log_filename)
@@ -909,6 +953,11 @@ def run(args):
         )
         if _native_emitter is not None:
             _native_emitter.set_config_strings(configs)
+        if not resume and not is_dry_run():
+            try:
+                (log_dir / RUN_FAILURES).unlink()
+            except FileNotFoundError:
+                pass
         if resume and not is_dry_run() and read_complete_cells(log_dir) is None:
             # Seeded the old way, from the logs present: a cell cut off mid-run
             # there cannot be told apart, and is not rerun.
