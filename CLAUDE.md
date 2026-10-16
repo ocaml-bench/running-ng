@@ -363,6 +363,12 @@ Post-conditions and caching:
   service reads it);
   `--retry-failed-builds` (the bench service) rebuilds despite a sentinel,
   with a warning. `buildbms` exits 1 too.
+- An invocation that ran and failed (exit other than `expected_exit`, timeout,
+  output check, harness exception) prints `.`/`X` and is appended to
+  `run-failures.json` in the run dir: suite, benchmark, runtime, config,
+  invocation, `kind` (`error`/`oom`/`timeout`/`check`/`exception`), `returncode`,
+  `reason`, `log`. runbms still exits 0; the bench service counts a cell with
+  any failure as failed. No file when nothing failed.
 - **Builds run in parallel** when every benchmark's tree has `.parallel-builds`
   at its root (macro-benches does; micro-benches does not, as each program builds in
   a `_build/` shared across runtimes). `--build-jobs N` (runbms and buildbms)
@@ -536,9 +542,9 @@ macOS also has no API that binds a process to a core, so `pin_command` returns
   well-known token formats and `user:password@` URLs in all of it. Anything
   that matches none of these is recorded verbatim, and logs get published.
 - **`--resume <run id>`** skips the cells listed in the run dir's `.cells-complete`
-  (a cell is added once all its invocations ran). A cell that is not listed is
-  rerun from invocation 0 after its leftover log, sidecars, memtrace files and
-  contract rows are deleted, so a session killed mid-cell leaves nothing half
+  (a cell is added once all its invocations ran and none failed). A cell that is
+  not listed is rerun from invocation 0 after its leftover log, sidecars,
+  memtrace files, contract rows and `run-failures.json` entries are deleted, so a session killed mid-cell leaves nothing half
   measured. The contract writer loads the measurements already in `contract/`
   and adds to them; only a fresh run starts them empty. A run dir from before
   the list existed is seeded from its logs on resume, which cannot tell a
