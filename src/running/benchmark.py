@@ -129,6 +129,9 @@ class SubprocessrExit(Enum):
 
 
 class Benchmark(object):
+    #: The last run's exit code; None after a timeout or a dry run.
+    last_returncode: Optional[int] = None
+
     def __init__(self, suite_name: str, name: str, wrapper: Optional[str] = None, timeout: Optional[int] = None, override_cwd: Optional[Path] = None, companion: Optional[str] = None, expected_exit: int = 0, **kwargs):
         self.name = name
         self.suite_name = suite_name
@@ -400,6 +403,7 @@ class Benchmark(object):
 
         try:
             _, bench_stderr = bench.communicate(timeout=self.timeout)
+            self.last_returncode = bench.returncode
             # A crash raises no exception here; inspect returncode.
             subprocess_exit = (SubprocessrExit.Normal
                                if self._exit_is_expected(bench.returncode)
@@ -414,6 +418,7 @@ class Benchmark(object):
                 except ProcessLookupError:
                     pass
             _, bench_stderr = bench.communicate(timeout=30)
+            self.last_returncode = None
             subprocess_exit = SubprocessrExit.Timeout
 
         # before perf/olly are reaped, so their usage stays out of the delta
@@ -527,15 +532,18 @@ class Benchmark(object):
                     timeout=self.timeout,
                     cwd=effective_cwd,
                 )
+                self.last_returncode = p.returncode
                 # A crash raises no exception here; inspect returncode.
                 subprocess_exit = (SubprocessrExit.Normal
                                    if self._exit_is_expected(p.returncode)
                                    else SubprocessrExit.Error)
                 stdout = p.stderr
             except subprocess.CalledProcessError as e:
+                self.last_returncode = e.returncode
                 subprocess_exit = SubprocessrExit.Error
                 stdout = e.stderr
             except subprocess.TimeoutExpired as e:
+                self.last_returncode = None
                 subprocess_exit = SubprocessrExit.Timeout
                 stdout = e.stderr
             finally:
