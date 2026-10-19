@@ -366,7 +366,8 @@ Post-conditions and caching:
 - An invocation that ran and failed (exit other than `expected_exit`, timeout,
   output check, harness exception) prints `.`/`X` and is appended to
   `run-failures.json` in the run dir: suite, benchmark, runtime, config,
-  invocation, `kind` (`error`/`oom`/`timeout`/`check`/`exception`), `returncode`,
+  invocation, `kind` (`error`/`oom`/`timeout`/`check`/`exception`, or `no_olly`
+  when it exited 0 before olly could attach: unmeasured), `returncode`,
   `reason`, `log`. runbms still exits 0; the bench service counts a cell with
   any failure as failed. No file when nothing failed.
 - **Builds run in parallel** when every benchmark's tree has `.parallel-builds`

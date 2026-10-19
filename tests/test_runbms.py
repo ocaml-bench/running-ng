@@ -137,8 +137,8 @@ def _run_loop(monkeypatch, tmp_path, results, invocations=2, resume=None):
                         lambda configuration, c: (_LoopRuntime("rt-" + c), []))
 
     def fake_run(c, b, runbms_dir, size, fd, **kw):
-        status, rc = results[c]
-        return b"", getattr(SubprocessrExit, status), rc
+        status, rc, *missed = results[c]
+        return b"", getattr(SubprocessrExit, status), rc, bool(missed and missed[0])
     monkeypatch.setattr(runbms, "run_benchmark_with_config", fake_run)
     runbms.run_one_benchmark(invocations, _LoopSuite(), _LoopBm("x"), None,
                              ["a", "b"], tmp_path, tmp_path)
@@ -171,3 +171,12 @@ def test_a_rerun_cell_drops_its_earlier_failures(tmp_path, monkeypatch):
                                          {"log": b, "kind": "error"}])
     runbms.discard_partial_cell(tmp_path, _LoopBm("x"), None, None, "a")
     assert runbms.read_run_failures(tmp_path) == [{"log": b, "kind": "error"}]
+
+
+def test_a_run_olly_could_not_attach_to_is_a_failure(tmp_path, monkeypatch):
+    _run_loop(monkeypatch, tmp_path, {"a": ("Normal", 0, True), "b": ("Normal", 0)},
+              invocations=1)
+    rows = runbms.read_run_failures(tmp_path)
+    assert [(r["runtime"], r["kind"]) for r in rows] == [("rt-a", "no_olly")]
+    assert runbms.read_complete_cells(tmp_path) == \
+        {runbms.get_filename(_LoopBm("x"), None, None, "b")}
