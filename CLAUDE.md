@@ -505,6 +505,10 @@ every invocation (`kpc_force_all_ctrs_set` claims the PMU globally, which no
 entitlement or fork arrangement avoids) and it launches rather than attaches.
 macOS also has no API that binds a process to a core, so `pin_command` returns
 `[]` and `CpuPin` contributes nothing there by design.
+So configs keep `perf_grp1/2/3` there (olly and rusage, no counters).
+`time_stats` fails (BSD `time` has no `-f`) and `olly_gc` runs a bare `olly`,
+which is not on PATH now that olly is built per runtime; `install_deps_macos.sh`
+says so.
 
 ## Gotchas (hard-won — don't rediscover)
 
