@@ -168,10 +168,12 @@ suites:
         path: "${RUNNING_MACRO_BENCH_DIR}/benchmarks/goblint"
         build_script: "goblint.build.sh"
         args: ""
+        ocamlrunparam: "e=25,d=2"   # the default ring overflows (stats_reliable=false)
       goblint_gen_large:
         path: "${RUNNING_MACRO_BENCH_DIR}/benchmarks/goblint"
         build_script: "goblint.build.sh"
         args: ""
+        ocamlrunparam: "e=25,d=2"   # as goblint_gen_default
 
   macro-infer-monorepo:
     type: OCamlBenchmarkSuite
@@ -241,6 +243,7 @@ suites:
         path: "${RUNNING_MACRO_BENCH_DIR}/benchmarks/ahrefs-devkit"
         build_script: "ahrefs-devkit.build.sh"
         args: "8"
+        ocamlrunparam: "e=25,d=2"   # the default ring overflows (stats_reliable=false)
       devkit_stre:
         path: "${RUNNING_MACRO_BENCH_DIR}/benchmarks/ahrefs-devkit"
         build_script: "ahrefs-devkit.build.sh"
