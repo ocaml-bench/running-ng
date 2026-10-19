@@ -131,6 +131,8 @@ class SubprocessrExit(Enum):
 class Benchmark(object):
     #: The last run's exit code; None after a timeout or a dry run.
     last_returncode: Optional[int] = None
+    #: True when the last run asked for olly but it never attached.
+    last_olly_missed: bool = False
 
     def __init__(self, suite_name: str, name: str, wrapper: Optional[str] = None, timeout: Optional[int] = None, override_cwd: Optional[Path] = None, companion: Optional[str] = None, expected_exit: int = 0, **kwargs):
         self.name = name
@@ -370,6 +372,7 @@ class Benchmark(object):
                 break
             time.sleep(0.01)
 
+        self.last_olly_missed = events_file is None
         if events_file is None:
             if bench_exited_early:
                 logging.warning(

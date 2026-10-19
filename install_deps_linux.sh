@@ -145,11 +145,6 @@ fi
 
 echo "  Using opam: $OPAM_BIN (version $OPAM_VER)"
 
-if [[ ! -d "$HOME/.opam" ]]; then
-    echo "  Initialising opam (this may take a minute)..."
-    "$OPAM_BIN" init --yes --disable-sandboxing --bare
-fi
-
 ok "opam ready"
 
 # 3. Switches
@@ -179,7 +174,6 @@ BENCH_PKGS=(
     decompress              # test_decompress
     bigstringaf checkseum   # decompress deps
     yojson camlp-streams    # ydump
-    str                     # benchmarksgame (fasta, spectralnorm)
 )
 
 # BUILD_TOOLS are provisioned by running.switches; only the pre-warm is left.
@@ -294,7 +288,7 @@ if [[ $ERRORS -eq 0 ]]; then
     echo ""
     echo "Notes:"
     echo "  - The first run will take longer as it builds OCaml/OxCaml runtimes."
-    echo "    Each compiler gets its own opam root under ~/.cache/running-ng/opam-roots/,"
+    echo "    Each compiler gets its own opam root under $(dirname "$OPAMROOT")/,"
     echo "    reused while its identity matches (python3 -m running.opam_roots list)."
     echo "  - Edit the config file to enable/disable benchmark suites:"
     echo "    $ROOT_DIR/src/running/config/examples/baseline_micro.yml"

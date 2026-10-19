@@ -117,10 +117,10 @@ BREW_PKGS=(
     unzip
 )
 
-INSTALLED_BREW=$(brew list --formula 2>/dev/null)
+# `brew list <name>` resolves aliases (python3, pkg-config); a grep of the list does not.
 TO_INSTALL=()
 for pkg in "${BREW_PKGS[@]}"; do
-    if ! echo "$INSTALLED_BREW" | grep -qx "$pkg"; then
+    if ! brew list --formula "$pkg" &>/dev/null; then
         TO_INSTALL+=("$pkg")
     fi
 done
@@ -180,12 +180,6 @@ fi
 
 echo "  Using opam: $OPAM_BIN (version $OPAM_VER)"
 
-# No sandboxing: bubblewrap is Linux-only.
-if [[ ! -d "$HOME/.opam" ]]; then
-    echo "  Initialising opam (this may take a minute)..."
-    "$OPAM_BIN" init --yes --disable-sandboxing --bare
-fi
-
 ok "opam ready"
 
 # 5. Switches
@@ -215,7 +209,6 @@ BENCH_PKGS=(
     decompress              # test_decompress
     bigstringaf checkseum   # decompress deps
     yojson camlp-streams    # ydump
-    str                     # benchmarksgame (fasta, spectralnorm)
 )
 
 # BUILD_TOOLS are provisioned by running.switches; only the pre-warm is left.
@@ -328,7 +321,7 @@ if [[ $ERRORS -eq 0 ]]; then
     echo "  - perf is not available on macOS. Make sure your config uses"
     echo "    olly_gc or time_stats modifiers instead of perf_grp1/2/3."
     echo "  - The first run will take longer as it builds OCaml/OxCaml runtimes."
-    echo "    Each compiler gets its own opam root under ~/.cache/running-ng/opam-roots/,"
+    echo "    Each compiler gets its own opam root under $(dirname "$OPAMROOT")/,"
     echo "    reused while its identity matches (python3 -m running.opam_roots list)."
     echo "  - Edit the config file to enable/disable benchmark suites:"
     echo "    $ROOT_DIR/src/running/config/examples/baseline_micro.yml"
