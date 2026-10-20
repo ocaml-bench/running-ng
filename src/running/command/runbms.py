@@ -13,6 +13,7 @@ from running.runtime import Runtime
 from running import osinfo
 from running import olly
 from running.modifier import PerfAndOllyAttach
+import contextlib
 import tempfile
 import gzip
 import shutil
@@ -783,7 +784,57 @@ PARALLEL_MARKER = ".parallel-builds"
 
 
 def default_build_jobs() -> int:
-    return max(1, min(16, os.cpu_count() or 1))
+    """Build workers: the CPUs this process may actually use, capped at 16.
+
+    `os.cpu_count()` ignores the affinity mask, so on a machine whose
+    housekeeping set is small it would start a worker per *installed* CPU and
+    oversubscribe the few the build is confined to. Called inside
+    `build_affinity()` this sees the widened mask.
+    """
+    try:
+        usable = len(os.sched_getaffinity(0))
+    except AttributeError:  # not Linux
+        usable = os.cpu_count() or 1
+    return max(1, min(16, usable))
+
+
+@contextlib.contextmanager
+def build_affinity():
+    """Run the build phase on every online CPU, then restore the mask.
+
+    `isolcpus=` takes the benchmark CPUs out of the default scheduler domain,
+    so anything that does not ask for them by name -- this process and every
+    build it spawns -- is left on the housekeeping CPUs, which are deliberately
+    few. Builds are not measured and all of them finish before the first
+    invocation, so they get the whole machine. Measurement is unaffected: a
+    pinned config sets the benchmark's own affinity through CpuPin's `taskset`
+    prefix, which does not consult this one.
+    """
+    try:
+        before = os.sched_getaffinity(0)
+    except AttributeError:  # not Linux: nothing to widen
+        yield
+        return
+    cpus = set(osinfo.online_cpus()) or before
+    if cpus <= before:
+        yield
+        return
+    try:
+        os.sched_setaffinity(0, cpus)
+    except OSError as e:
+        logging.debug("Could not widen affinity for the build phase: %s", e)
+        yield
+        return
+    logging.info("Build phase on CPUs %s (measurement pins separately)",
+                 osinfo.format_cpu_list(sorted(cpus)))
+    try:
+        yield
+    finally:
+        try:
+            os.sched_setaffinity(0, before)
+        except OSError as e:
+            logging.warning("Could not restore affinity after the build "
+                            "phase: %s", e)
 
 
 def parallel_safe(bm) -> bool:
@@ -909,8 +960,9 @@ def run(args):
         _raw_runtimes = dict(configuration.get("runtimes") or {})
         requested_jobs = args.get("build_jobs")
         if not is_dry_run():
-            prebuild_roots(configuration, default_build_jobs()
-                           if requested_jobs is None else requested_jobs)
+            with build_affinity():
+                prebuild_roots(configuration, default_build_jobs()
+                               if requested_jobs is None else requested_jobs)
         configuration.resolve_class()
         # With schema_version, contract artifacts go to <log_dir>/contract as the
         # run proceeds; without it, the contract-adapter converts afterwards.
@@ -1003,11 +1055,12 @@ def run(args):
                 sys.exit(1)
         set_retry_failed_builds(bool(args.get("retry_failed_builds")))
         unbuilt.clear()
-        build_jobs = benchmark_build_jobs(requested_jobs, benchmarks)
-        if build_jobs > 1 and not is_dry_run():
-            set_build_log_dir(log_dir / "build-logs")
-        build_failed = prebuild(benchmarks, suites, configs, runtime_by_config,
-                                jobs=build_jobs)
+        with build_affinity():
+            build_jobs = benchmark_build_jobs(requested_jobs, benchmarks)
+            if build_jobs > 1 and not is_dry_run():
+                set_build_log_dir(log_dir / "build-logs")
+            build_failed = prebuild(benchmarks, suites, configs,
+                                    runtime_by_config, jobs=build_jobs)
         if build_failed:
             skip = bool(args.get("skip_build_failures"))
             print("\n--- Build failures ({}) ---".format(len(build_failed)))
