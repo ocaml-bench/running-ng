@@ -7,8 +7,9 @@ from running.config import Configuration
 from pathlib import Path
 from running.util import parse_config_str
 from running.runtime import Runtime
-from running.command.runbms import (benchmark_build_jobs, default_build_jobs,
-                                    expand_configs, prebuild, prebuild_roots)
+from running.command.runbms import (benchmark_build_jobs, build_affinity,
+                                    default_build_jobs, expand_configs,
+                                    prebuild, prebuild_roots)
 from running.benchmark import set_build_log_dir
 import os
 
@@ -37,7 +38,9 @@ def run(args) -> bool:
     config_path = args["CONFIG"]
     configuration = Configuration.from_file(Path(os.getcwd()), config_path)
     requested = args.get("build_jobs")
-    prebuild_roots(configuration, default_build_jobs() if requested is None else requested)
+    with build_affinity():
+        prebuild_roots(configuration,
+                       default_build_jobs() if requested is None else requested)
     configuration.resolve_class()
 
     suites = configuration.get("suites")
@@ -60,10 +63,12 @@ def run(args) -> bool:
           f"{', '.join(unique_runtimes.keys())}")
     print()
 
-    jobs = benchmark_build_jobs(requested, benchmarks)
-    if jobs > 1:
-        set_build_log_dir(Path(os.environ.get("LOG_DIR", "build-logs")) / "build-logs")
-    failed_why = prebuild(benchmarks, suites, configs, runtime_by_config, jobs=jobs)
+    with build_affinity():
+        jobs = benchmark_build_jobs(requested, benchmarks)
+        if jobs > 1:
+            set_build_log_dir(Path(os.environ.get("LOG_DIR", "build-logs")) / "build-logs")
+        failed_why = prebuild(benchmarks, suites, configs, runtime_by_config,
+                              jobs=jobs)
     build_failed: Set[Tuple[str, str, str]] = set(failed_why)
     prepared: Set[Tuple[str, str, str]] = {
         (s_, bm.name, runtime_by_config[c].name)
