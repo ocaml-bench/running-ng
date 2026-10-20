@@ -102,7 +102,7 @@ suites:
       bytes_bench_blit:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_blit 2500000"
+        args: "bytes_blit 125000000"
       bytes_bench_concat:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
@@ -158,7 +158,7 @@ suites:
       string_bench_trim:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_trim 1000000"
+        args: "string_trim 50000000"
       string_bench_index:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
@@ -461,7 +461,7 @@ suites:
       capi_no_args_noalloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
-        args: "test_no_args_noalloc 10000000"
+        args: "test_no_args_noalloc 600000000"
       capi_few_args_alloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
@@ -469,7 +469,7 @@ suites:
       capi_few_args_noalloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
-        args: "test_few_args_noalloc 10000000"
+        args: "test_few_args_noalloc 600000000"
       capi_many_args_alloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
@@ -477,7 +477,7 @@ suites:
       capi_many_args_noalloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
-        args: "test_many_args_noalloc 10000000"
+        args: "test_many_args_noalloc 300000000"
 
   # with_deps/ (dune multi-library builds or generated data)
   sandmark-with-deps:
@@ -593,7 +593,7 @@ suites:
         args: "1_000_000_000"
       effect_throughput_perform:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
-        args: "1_000_000"
+        args: "60_000_000"
       effect_throughput_perform_drop:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
         args: "1_000_000"
