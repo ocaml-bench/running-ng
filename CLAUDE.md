@@ -596,7 +596,9 @@ macOS also has no API that binds a process to a core, so `pin_command` returns
   level (`macro-{zarith,menhir-monorepo,eio,coq-monorepo,decompress,owl,ocamlc-self-compile}`;
   zarith drops ~290M events at default; owl and ocamlc-self-compile added 2026-10-09 after
   an aarch64 all_benches run showed owl_gc and ocamlc_compile_uucp_large overflowing). The
-  `zarith_pi_huge` rung overflows even e=25, so it carries `e=26,d=2` per-program. The `d=2`
+  `zarith_pi_huge` rung overflows even e=25, so it carries `e=26,d=2` per-program. `goblint_gen_default`, `goblint_gen_large` and `devkit_htmlstream_large` carry
+  `e=25,d=2` per-program: they overflowed the default ring on a busy Apple M5
+  (2026-10-19), though not on monolith, where e=25 left their wall time unchanged. The `d=2`
   is **required**, not just a domain cap: OCaml
   sizes the ring as `max_domains * 2^e`, so `e=25` alone at the default
   `max_domains=128` demands ~4GB and **aborts** (SIGABRT + "olly internal error") —
