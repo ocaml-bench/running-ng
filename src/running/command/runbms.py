@@ -205,7 +205,7 @@ def get_hfacs(heap_range: int, spread_factor: int, N: int, ns: List[int]) -> Lis
 _native_emitter = None
 
 
-def run_benchmark_with_config(c: str, b: Benchmark, runbms_dir: Path, size: Optional[int], fd: Optional[BinaryIO], sidecar_paths: Optional[Dict[str, Path]] = None, memtrace_path: Optional[Path] = None) -> Tuple[bytes, SubprocessrExit, Optional[int]]:
+def run_benchmark_with_config(c: str, b: Benchmark, runbms_dir: Path, size: Optional[int], fd: Optional[BinaryIO], sidecar_paths: Optional[Dict[str, Path]] = None, memtrace_path: Optional[Path] = None) -> Tuple[bytes, SubprocessrExit, Optional[int], bool]:
     runtime, mods = parse_config_str(configuration, c)
     mod_b = b.attach_modifiers(mods)
     if size is not None:
@@ -244,7 +244,7 @@ def run_benchmark_with_config(c: str, b: Benchmark, runbms_dir: Path, size: Opti
                     jf.write(b"\n")
         except (json.JSONDecodeError, ValueError):
             pass
-    return output, exit_status, mod_b.last_returncode
+    return output, exit_status, mod_b.last_returncode, mod_b.last_olly_missed
 
 
 def get_filename_no_ext(bm: Benchmark, hfac: Optional[float], size: Optional[int], config: str) -> str:
@@ -622,16 +622,17 @@ def run_one_benchmark(
                         "log": log_filename})
 
             returncode: Optional[int] = None
+            olly_missed = False
             try:
                 if is_dry_run():
-                    output, exit_status, _ = run_benchmark_with_config(
+                    output, exit_status, _, _ = run_benchmark_with_config(
                         c, bm, runbms_dir, size, None
                     )
                     assert exit_status is SubprocessrExit.Dryrun
                 else:
                     fd: BinaryIO
                     with (log_dir / log_filename).open("ab") as fd:
-                        output, exit_status, returncode = run_benchmark_with_config(
+                        output, exit_status, returncode, olly_missed = run_benchmark_with_config(
                             c, bm, runbms_dir, size, fd,
                             sidecar_paths=sidecar_paths,
                             memtrace_path=memtrace_path,
@@ -669,7 +670,12 @@ def run_one_benchmark(
                 note_failure("oom" if runtime.is_oom(output) else "error",
                              "exit {}".format(returncode), returncode)
             elif exit_status is SubprocessrExit.Normal:
-                if suite.is_passed(output):
+                if suite.is_passed(output) and olly_missed:
+                    # ran fine, but too short (or unattachable) for olly: unmeasured
+                    print(".", end="", flush=True)
+                    note_failure("no_olly", "olly could not attach (exited too soon?)",
+                                 returncode)
+                elif suite.is_passed(output):
                     config_passed = True
                     print(config_index_to_chr(j), end="", flush=True)
                 else:
