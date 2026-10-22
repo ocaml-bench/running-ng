@@ -132,9 +132,8 @@ else
     ok "All Homebrew packages already installed"
 fi
 
-warn "perf is not available on macOS."
-warn "PerfAndOllyAttach modifiers (perf_grp1/2/3) will not work."
-warn "Use olly_gc or time_stats modifiers instead in your config."
+warn "No hardware counters on macOS: perf_grp1/2/3 record olly and rusage only."
+warn "Do not use time_stats (needs GNU time) or olly_gc (expects olly on PATH)."
 
 # 4. opam (>= 2.2)
 step "Checking opam"
@@ -318,8 +317,8 @@ if [[ $ERRORS -eq 0 ]]; then
     echo "  make -C $MACRO_BENCHES_DIR setup"
     echo ""
     echo "Notes:"
-    echo "  - perf is not available on macOS. Make sure your config uses"
-    echo "    olly_gc or time_stats modifiers instead of perf_grp1/2/3."
+    echo "  - Use perf_grp1/2/3 as on Linux: without perf they record olly and"
+    echo "    rusage only. time_stats and olly_gc do not work on macOS."
     echo "  - The first run will take longer as it builds OCaml/OxCaml runtimes."
     echo "    Each compiler gets its own opam root under $(dirname "$OPAMROOT")/,"
     echo "    reused while its identity matches (python3 -m running.opam_roots list)."
