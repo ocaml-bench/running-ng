@@ -4,6 +4,9 @@
 #   includes: ["../base/ocaml/micro_base.yml"]
 # and define runtimes, configs, config_sweep and invocations themselves.
 # Run: running-env/bin/python -m running runbms LOG_DIR <experiment>.yml
+#
+# Program args mirror micro-benches' manifest.yml and are sized so every program runs
+# >= 1 s (about 2 s on an Apple M5); shorter runs exit before olly/perf can attach.
 
 # Suites. OCamlMulticoreBenchmarkSuite enforces OCaml >= 5 at build time;
 # OCamlBenchmarkSuite builds on any version.
@@ -23,23 +26,23 @@ suites:
     programs:
       almabench:
         path: "${RUNNING_BENCH_DIR}/simple/almabench"
-        args: ""
+        args: "20"
       bdd:
         path: "${RUNNING_BENCH_DIR}/simple/bdd"
-        args: ""
+        args: "22 100 25"
       # No `binarytrees` here: simple/binarytrees does not exist; use binarytrees5 (sandmark-with-packages).
       hamming:
         path: "${RUNNING_BENCH_DIR}/simple/hamming"
-        args: "500000"
+        args: "500000 20"
       soli:
         path: "${RUNNING_BENCH_DIR}/simple/soli"
-        args: "50"
+        args: "1500"
       kb:
         path: "${RUNNING_BENCH_DIR}/simple/kb"
-        args: ""
+        args: "300"
       kb_no_exc:
         path: "${RUNNING_BENCH_DIR}/simple/kb"
-        args: ""
+        args: "300"
       lexifi-g2pp:
         path: "${RUNNING_BENCH_DIR}/simple/lexifi-g2pp"
         # build_env:
@@ -53,22 +56,22 @@ suites:
         args: "11"
       crout_decomposition:
         path: "${RUNNING_BENCH_DIR}/simple/numerical-analysis"
-        args: ""
+        args: "5"
       qr_decomposition:
         path: "${RUNNING_BENCH_DIR}/simple/numerical-analysis"
-        args: ""
+        args: "3"
       durand_kerner_aberth:
         path: "${RUNNING_BENCH_DIR}/simple/numerical-analysis"
-        args: ""
+        args: "100 40"
       fft:
         path: "${RUNNING_BENCH_DIR}/simple/numerical-analysis"
-        args: ""
+        args: "1048576 2"
       levinson_durbin:
         path: "${RUNNING_BENCH_DIR}/simple/numerical-analysis"
-        args: ""
+        args: "10000 2"
       naive_multilayer:
         path: "${RUNNING_BENCH_DIR}/simple/numerical-analysis"
-        args: ""
+        args: "2"
       markbench:
         path: "${RUNNING_BENCH_DIR}/simple/markbench"
         args: ""
@@ -77,80 +80,80 @@ suites:
         args: "${RUNNING_BENCH_DIR}/simple/minilight/roomfront.ml.txt"
       sequence_cps:
         path: "${RUNNING_BENCH_DIR}/simple/sequence"
-        args: "10000"
+        args: "17500"
       # simple/stdlib
       array_bench_fold:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "array_bench.build.sh"
-        args: "array_fold 1000 100000"
+        args: "array_fold 1000 1500000"
       array_bench_forall:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "array_bench.build.sh"
-        args: "array_forall 1000 100000"
+        args: "array_forall 1000 2000000"
       array_bench_iter:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "array_bench.build.sh"
-        args: "array_iter 1000 100000"
+        args: "array_iter 1000 1500000"
       bytes_bench_get:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_get 100000000"
+        args: "bytes_get 2500000000"
       bytes_bench_sub:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_sub 100000000"
+        args: "bytes_sub 500000000"
       bytes_bench_blit:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_blit 125000000"
+        args: "bytes_blit 250000000"
       bytes_bench_concat:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_concat 2000000"
+        args: "bytes_concat 100000000"
       bytes_bench_iter:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_iter 1000000"
+        args: "bytes_iter 6000000"
       bytes_bench_map:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_map 1000000"
+        args: "bytes_map 5000000"
       bytes_bench_trim:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_trim 2500000"
+        args: "bytes_trim 150000000"
       bytes_bench_index:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_index 10000000"
+        args: "bytes_index 250000000"
       bytes_bench_contains:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_contains 100000000"
+        args: "bytes_contains 400000000"
       bytes_bench_uppercase_ascii:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_uppercase_ascii 1000000"
+        args: "bytes_uppercase_ascii 3000000"
       string_bench_get:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_get 50000000"
+        args: "string_get 2000000000"
       string_bench_sub:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_sub 50000000"
+        args: "string_sub 400000000"
       string_bench_blit:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_blit 25000000"
+        args: "string_blit 200000000"
       string_bench_concat:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_concat 20000000"
+        args: "string_concat 100000000"
       string_bench_iter:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_iter 1000000"
+        args: "string_iter 5000000"
       string_bench_map:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
@@ -158,63 +161,63 @@ suites:
       string_bench_trim:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_trim 50000000"
+        args: "string_trim 125000000"
       string_bench_index:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_index 25000000"
+        args: "string_index 400000000"
       string_bench_contains:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_contains 25000000"
+        args: "string_contains 300000000"
       string_bench_uppercase_ascii:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_uppercase_ascii 1000000"
+        args: "string_uppercase_ascii 4000000"
       string_bench_split_on_char:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_split_on_char 500000"
+        args: "string_split_on_char 2500000"
       string_bench_compare:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_compare 10000"
+        args: "string_compare 60000"
       string_bench_equal:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_equal 25000"
+        args: "string_equal 100000"
       map_bench_iter:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "map_bench.build.sh"
-        args: "map_iter 10000"
+        args: "map_iter 80000"
       map_bench_add:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "map_bench.build.sh"
-        args: "map_add 1000000"
+        args: "map_add 1000000 12"
       map_bench_add_duplicate:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "map_bench.build.sh"
-        args: "map_add_duplicate 1000000"
+        args: "map_add_duplicate 1000000 5"
       map_bench_remove:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "map_bench.build.sh"
-        args: "map_remove 1000000"
+        args: "map_remove 20000000"
       map_bench_fold:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "map_bench.build.sh"
-        args: "map_fold 10000"
+        args: "map_fold 60000"
       map_bench_for_all:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "map_bench.build.sh"
-        args: "map_for_all 10000"
+        args: "map_for_all 80000"
       map_bench_find:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "map_bench.build.sh"
-        args: "map_find 1000000"
+        args: "map_find 25000000"
       map_bench_map:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "map_bench.build.sh"
-        args: "map_map 10000"
+        args: "map_map 40000"
       set_bench_fold:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "set_bench.build.sh"
@@ -230,181 +233,181 @@ suites:
       stack_bench_fold:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "stack_bench.build.sh"
-        args: "stack_fold 2500000"
+        args: "stack_fold 20000000"
       stack_bench_push_pop:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "stack_bench.build.sh"
-        args: "stack_push_pop 100000000"
+        args: "stack_push_pop 250000000"
       hashtbl_bench_int_replace1:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "int_replace1 10000"
+        args: "int_replace1 150000"
       hashtbl_bench_int_find1:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "int_find1 20000"
+        args: "int_find1 500000"
       hashtbl_bench_int_replace2:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "int_replace2 100000"
+        args: "int_replace2 200000"
       hashtbl_bench_int_find2:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "int_find2 300000"
+        args: "int_find2 800000"
       hashtbl_bench_caml_hash_int:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "caml_hash_int 200000"
+        args: "caml_hash_int 800000"
       hashtbl_bench_caml_hash_tuple:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "caml_hash_tuple 100000"
+        args: "caml_hash_tuple 400000"
       hashtbl_bench_iter:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "hashtbl_iter 200000"
+        args: "hashtbl_iter 800000"
       hashtbl_bench_fold:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "hashtbl_fold 200000"
+        args: "hashtbl_fold 800000"
       hashtbl_bench_add_resizing:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "hashtbl_add_resizing 4000000"
+        args: "hashtbl_add_resizing 4000000 3"
       hashtbl_bench_add_sized:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "hashtbl_add_sized 6000000"
+        args: "hashtbl_add_sized 6000000 4"
       hashtbl_bench_add_duplicate:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "hashtbl_add_duplicate 2000000"
+        args: "hashtbl_add_duplicate 2000000 4"
       hashtbl_bench_remove:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "hashtbl_remove 4000000"
+        args: "hashtbl_remove 80000000"
       hashtbl_bench_find:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "hashtbl_find 6000000"
+        args: "hashtbl_find 150000000"
       hashtbl_bench_filter_map:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "hashtbl_bench.build.sh"
-        args: "hashtbl_filter_map 100000"
+        args: "hashtbl_filter_map 250000"
       pervasives_bench_compare_lists:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "pervasives_bench.build.sh"
-        args: "pervasives_compare_lists 100000000"
+        args: "pervasives_compare_lists 500000000"
       pervasives_bench_compare_ints:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "pervasives_bench.build.sh"
-        args: "pervasives_compare_ints 1000000000"
+        args: "pervasives_compare_ints 6000000000"
       pervasives_bench_compare_floats:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "pervasives_bench.build.sh"
-        args: "pervasives_compare_floats 200000000"
+        args: "pervasives_compare_floats 4000000000"
       pervasives_bench_compare_strings:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "pervasives_bench.build.sh"
-        args: "pervasives_compare_strings 20000000"
+        args: "pervasives_compare_strings 60000000"
       pervasives_bench_equal_lists:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "pervasives_bench.build.sh"
-        args: "pervasives_equal_lists 1000000000"
+        args: "pervasives_equal_lists 6000000000"
       pervasives_bench_equal_ints:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "pervasives_bench.build.sh"
-        args: "pervasives_equal_ints 1000000000"
+        args: "pervasives_equal_ints 8000000000"
       pervasives_bench_equal_floats:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "pervasives_bench.build.sh"
-        args: "pervasives_equal_floats 1000000000"
+        args: "pervasives_equal_floats 5000000000"
       pervasives_bench_equal_strings:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "pervasives_bench.build.sh"
-        args: "pervasives_equal_strings 20000000"
+        args: "pervasives_equal_strings 60000000"
       str_bench_regexp:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "str_bench.build.sh"
-        args: "str_regexp 1000000"
+        args: "str_regexp 8000000"
       str_bench_string_match:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "str_bench.build.sh"
-        args: "str_string_match 50000000"
+        args: "str_string_match 300000000"
       str_bench_search_forward:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "str_bench.build.sh"
-        args: "str_search_forward 5000000"
+        args: "str_search_forward 20000000"
       str_bench_string_partial_match:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "str_bench.build.sh"
-        args: "str_string_partial_match 25000000"
+        args: "str_string_partial_match 250000000"
       str_bench_global_replace:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "str_bench.build.sh"
-        args: "str_global_replace 1000000"
+        args: "str_global_replace 8000000"
       str_bench_split:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "str_bench.build.sh"
-        args: "str_split 2000000"
+        args: "str_split 10000000"
       big_array_bench_int_rev:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "big_array_bench.build.sh"
-        args: "big_array_int_rev 1024 50000"
+        args: "big_array_int_rev 1024 400000"
       big_array_bench_int32_rev:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "big_array_bench.build.sh"
-        args: "big_array_int32_rev 1024 50000"
+        args: "big_array_int32_rev 1024 200000"
       # simple/simple-tests
       alloc:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
-        args: "200_000"
+        args: "1_000_000"
       lists_int_small:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "lists.build.sh"
-        args: "int 1"
+        args: "int 1 150"
       lists_int_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "lists.build.sh"
-        args: "int 100000"
+        args: "int 100000 30"
       lists_float_small:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "lists.build.sh"
-        args: "float 1"
+        args: "float 1 120"
       lists_float_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "lists.build.sh"
-        args: "float 100000"
+        args: "float 100000 12"
       lists_string_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "lists.build.sh"
-        args: "string 100000"
+        args: "string 100000 6"
       lists_int_array_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "lists.build.sh"
-        args: "int-array 100000"
+        args: "int-array 100000 8"
       stress_small:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "stress.build.sh"
-        args: "10000 10"
+        args: "10000 10 250000"
       stress_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "stress.build.sh"
-        args: "100000 100"
+        args: "100000 100 250000"
       lazylist_small:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "lazylist.build.sh"
-        args: "100000 100"
+        args: "100000 400"
       lazylist_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "lazylist.build.sh"
-        args: "10000 1000"
+        args: "10000 15000"
       lazy_primes:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         args: "10000"
       morestacks:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
-        args: "1_000"
+        args: "4_000"
       stacks_ints_small:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "stacks.build.sh"
@@ -412,7 +415,7 @@ suites:
       stacks_ints_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "stacks.build.sh"
-        args: "20000 ints-large"
+        args: "20000 ints-large 12000"
       stacks_floats_small:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "stacks.build.sh"
@@ -420,35 +423,35 @@ suites:
       stacks_floats_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "stacks.build.sh"
-        args: "20000 floats-large"
+        args: "20000 floats-large 8000"
       finalise_10:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "finalise.build.sh"
-        args: "10"
+        args: "10 150000"
       finalise_50:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "finalise.build.sh"
-        args: "50"
+        args: "50 60000"
       finalise_100:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "finalise.build.sh"
-        args: "100"
+        args: "100 40000"
       weakretain_25_small:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "weakretain.build.sh"
-        args: "25 1000"
+        args: "25 1000 20"
       weakretain_25_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "weakretain.build.sh"
-        args: "25 10000000"
+        args: "25 10000000 15"
       weakretain_75_small:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "weakretain.build.sh"
-        args: "75 1000"
+        args: "75 1000 15"
       weakretain_75_large:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         build_script: "weakretain.build.sh"
-        args: "75 10000000"
+        args: "75 10000000 10"
       weak_htbl:
         path: "${RUNNING_BENCH_DIR}/simple/simple-tests"
         # 1000 finishes in ~6ms, too short for olly to attach.
@@ -457,27 +460,27 @@ suites:
       capi_no_args_alloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
-        args: "test_no_args_alloc 10000000"
+        args: "test_no_args_alloc 1000000000"
       capi_no_args_noalloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
-        args: "test_no_args_noalloc 600000000"
+        args: "test_no_args_noalloc 2000000000"
       capi_few_args_alloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
-        args: "test_few_args_alloc 10000000"
+        args: "test_few_args_alloc 1000000000"
       capi_few_args_noalloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
-        args: "test_few_args_noalloc 600000000"
+        args: "test_few_args_noalloc 2000000000"
       capi_many_args_alloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
-        args: "test_many_args_alloc 10000000"
+        args: "test_many_args_alloc 800000000"
       capi_many_args_noalloc:
         path: "${RUNNING_BENCH_DIR}/simple/capi"
         build_script: "capi.build.sh"
-        args: "test_many_args_noalloc 300000000"
+        args: "test_many_args_noalloc 2000000000"
 
   # with_deps/ (dune multi-library builds or generated data)
   sandmark-with-deps:
@@ -526,20 +529,20 @@ suites:
         args: "50000000"
       pidigits5:
         path: "${RUNNING_BENCH_DIR}/with_packages/benchmarksgame"
-        args: "10000"
+        args: "10000 3"
       spectralnorm2:
         path: "${RUNNING_BENCH_DIR}/with_packages/benchmarksgame"
         args: "5500"
       # zarith (needs zarith, num)
       zarith_fact:
         path: "${RUNNING_BENCH_DIR}/with_packages/zarith"
-        args: "40 1000000"
+        args: "40 8000000"
       zarith_fib:
         path: "${RUNNING_BENCH_DIR}/with_packages/zarith"
-        args: "Z 40"
+        args: "Z 44"
       zarith_tak:
         path: "${RUNNING_BENCH_DIR}/with_packages/zarith"
-        args: "Z 2500"
+        args: "Z 15000"
       # lwt-based (needs lwt, lwt.unix)
       chameneos_redux_lwt:
         path: "${RUNNING_BENCH_DIR}/with_packages/chameneos"
@@ -560,7 +563,7 @@ suites:
       # test_lwt is OxCaml-incompatible (lwt.unix locality error).
       test_lwt:
         path: "${RUNNING_BENCH_DIR}/with_packages/valet"
-        args: "100"
+        args: "150"
 
   # multicore/ (OCaml 5+: effects, domains, domainslib). ocamlrunparam d = spawned domains + main.
   multicore-effects:
@@ -575,31 +578,31 @@ suites:
         args: ""
       rec_seq_fib:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
-        args: ""
+        args: "9"
       rec_eff_tak:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
         args: ""
       rec_seq_tak:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
-        args: ""
+        args: "4"
       rec_eff_ack:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
         args: ""
       rec_seq_ack:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
-        args: ""
+        args: "5"
       effect_throughput_val:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
         args: "1_000_000_000"
       effect_throughput_perform:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
-        args: "60_000_000"
+        args: "120_000_000"
       effect_throughput_perform_drop:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
-        args: "1_000_000"
+        args: "25_000_000"
       eratosthenes:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
-        args: "1000"
+        args: "1000 160"
       # The built-in default (2 x 500M) exceeds the 120s timeout.
       rec_eff_evenodd:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
@@ -612,13 +615,13 @@ suites:
         args: ""
       rec_seq_motzkin:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
-        args: ""
+        args: "20"
       rec_eff_sudan:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
         args: ""
       rec_seq_sudan:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-effects"
-        args: ""
+        args: "50_000_000"
 
   multicore-structures:
     type: OCamlMulticoreBenchmarkSuite
@@ -626,28 +629,28 @@ suites:
     programs:
       test_queue_sequential:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-structures"
-        args: "1000000"
+        args: "1000000 25"
       test_queue_parallel:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-structures"
-        args: "1000000"
+        args: "1000000 20"
         ocamlrunparam: "d=3"
       test_stack_sequential:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-structures"
-        args: "1000000"
+        args: "1000000 35"
       test_stack_parallel:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-structures"
-        args: "1000000"
+        args: "1000000 20"
         ocamlrunparam: "d=3"
       test_spsc_queue_sequential:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-structures"
         args: "100000"
       test_spsc_queue_parallel:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-structures"
-        args: "1000000"
+        args: "20000000"
         ocamlrunparam: "d=3"
       test_spsc_queue_pingpong_parallel:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-structures"
-        args: "4 100000"
+        args: "4 100000 120"
         ocamlrunparam: "d=5"
 
   multicore-numerical:
@@ -661,15 +664,15 @@ suites:
         ocamlrunparam: "d=5"
       nbody_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 500 1024"
+        args: "4 5000 1024"
         ocamlrunparam: "d=5"
       floyd_warshall_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 512"
+        args: "4 512 20"
         ocamlrunparam: "d=5"
       game_of_life_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 10 1024"
+        args: "4 700 1024"
         ocamlrunparam: "d=5"
       binarytrees5_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
@@ -677,39 +680,39 @@ suites:
         ocamlrunparam: "d=5"
       spectralnorm2_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 2000"
+        args: "4 2000 200"
         ocamlrunparam: "d=5"
       fannkuchredux_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 11"
+        args: "4 11 4"
         ocamlrunparam: "d=5"
       quicksort_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 2000000"
+        args: "4 2000000 8"
         ocamlrunparam: "d=5"
       mergesort_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 1000000"
+        args: "4 1000000 60"
         ocamlrunparam: "d=5"
       matrix_multiplication_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 512"
+        args: "4 512 25"
         ocamlrunparam: "d=5"
       matrix_multiplication_tiling_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 512"
+        args: "4 512 25"
         ocamlrunparam: "d=5"
       LU_decomposition_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 1200"
+        args: "4 1200 4"
         ocamlrunparam: "d=5"
       nqueens_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 13"
+        args: "4 13 6"
         ocamlrunparam: "d=5"
       evolutionary_algorithm_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "4 1000 1000"
+        args: "4 1000 1000 800000"
         ocamlrunparam: "d=5"
       # sequential baselines
       nbody:
@@ -717,28 +720,28 @@ suites:
         args: "500 1024"
       floyd_warshall:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "512"
+        args: "512 8"
       game_of_life:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "10 1024"
+        args: "150 1024"
       quicksort:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "2000000"
+        args: "2000000 5"
       mergesort:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "1000000"
+        args: "1000000 20"
       matrix_multiplication:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "512"
+        args: "512 10"
       LU_decomposition:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
         args: "1200"
       nqueens:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "13"
+        args: "13 5"
       evolutionary_algorithm:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-numerical"
-        args: "1000 1000"
+        args: "1000 1000 200000"
 
   multicore-grammatrix:
     type: OCamlMulticoreBenchmarkSuite
@@ -768,7 +771,7 @@ suites:
     programs:
       kernel1_run_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/graph500par"
-        args: "-ndomains 4 ${RUNNING_BENCH_DIR}/multicore/graph500par/edges.data"
+        args: "-ndomains 4 -repeat 200 ${RUNNING_BENCH_DIR}/multicore/graph500par/edges.data"
         ocamlrunparam: "d=5"
 
   mpl:
@@ -777,15 +780,15 @@ suites:
     programs:
       primes:
         path: "${RUNNING_BENCH_DIR}/with_deps/mpl"
-        args: "-N 100000000 -procs 4"
+        args: "-N 100000000 -procs 4 -repeat 6"
         ocamlrunparam: "d=5"
       msort_ints:
         path: "${RUNNING_BENCH_DIR}/with_deps/mpl"
-        args: "-N 10000000 -procs 4"
+        args: "-N 10000000 -procs 4 -repeat 3"
         ocamlrunparam: "d=5"
       msort_strings:
         path: "${RUNNING_BENCH_DIR}/with_deps/mpl"
-        args: "-f ${RUNNING_BENCH_DIR}/with_deps/mpl/inputs/words64.txt -procs 4"
+        args: "-f ${RUNNING_BENCH_DIR}/with_deps/mpl/inputs/words64.txt -procs 4 -repeat 7"
         ocamlrunparam: "d=5"
       tokens:
         path: "${RUNNING_BENCH_DIR}/with_deps/mpl"
@@ -803,27 +806,29 @@ suites:
     programs:
       alloc_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/alloc_multicore"
-        args: "2 200_000"
+        args: "2 2_000_000"
         ocamlrunparam: "d=3"
       pingpong_multicore:
         path: "${RUNNING_BENCH_DIR}/multicore/pingpong_multicore"
-        args: "3 1 1000000"
+        args: "3 1 2500000"
         ocamlrunparam: "d=4"
 
   multicore-gcroots:
     type: OCamlMulticoreBenchmarkSuite
-    timeout: 120
+    # 4 domains and a stop-the-world full major every 37 steps: slow on hosts
+    # with fewer cores than domains (about 120 s on a 3-core macOS runner).
+    timeout: 300
     programs:
       globroots_seq:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-gcroots"
-        args: ""
+        args: "1 200000"
       globroots_mp:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-gcroots"
-        args: "4 10000"
+        args: "4 60000"
         ocamlrunparam: "d=5"
       globroots_sp:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-gcroots"
-        args: "4 10000"
+        args: "4 80000"
         ocamlrunparam: "d=5"
 
   oxcaml-prefetch:
