@@ -815,7 +815,9 @@ suites:
 
   multicore-gcroots:
     type: OCamlMulticoreBenchmarkSuite
-    timeout: 120
+    # 4 domains and a stop-the-world full major every 37 steps: slow on hosts
+    # with fewer cores than domains (about 120 s on a 3-core macOS runner).
+    timeout: 300
     programs:
       globroots_seq:
         path: "${RUNNING_BENCH_DIR}/multicore/multicore-gcroots"
