@@ -125,7 +125,7 @@ suites:
       bytes_bench_index:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
-        args: "bytes_index 250000000"
+        args: "bytes_index 500000000"
       bytes_bench_contains:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "bytes_bench.build.sh"
@@ -165,7 +165,7 @@ suites:
       string_bench_index:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
-        args: "string_index 400000000"
+        args: "string_index 800000000"
       string_bench_contains:
         path: "${RUNNING_BENCH_DIR}/simple/stdlib"
         build_script: "string_bench.build.sh"
