@@ -182,22 +182,22 @@ suites:
       # Rung (roots_<rung>.idx) is baked into the wrapper by infer.build.sh; INFER_JOBS
       # sets the --multicore domain count (default 12). ocamlrunparam overrides re/md:
       # d=2 fails Domain.spawn ("failed to allocate domain"), e>=22 segfaults the
-      # multi-domain process on 5.5.0, e<18 loses olly events on the large rung.
+      # multi-domain process on 5.5.0, e=18 lost olly events on infer_default (5.5.1).
       infer_small:
         path: "${RUNNING_MACRO_BENCH_DIR}/benchmarks/infer"
         build_script: "infer.build.sh"
         args: ""
-        ocamlrunparam: "e=18,d=128"
+        ocamlrunparam: "e=20,d=32"
       infer_default:
         path: "${RUNNING_MACRO_BENCH_DIR}/benchmarks/infer"
         build_script: "infer.build.sh"
         args: ""
-        ocamlrunparam: "e=18,d=128"
+        ocamlrunparam: "e=20,d=32"
       infer_large:
         path: "${RUNNING_MACRO_BENCH_DIR}/benchmarks/infer"
         build_script: "infer.build.sh"
         args: ""
-        ocamlrunparam: "e=18,d=128"
+        ocamlrunparam: "e=20,d=32"
 
   # coqc_tree_* reduce a 2^D-deep unary nat (D=17/18/19); work roughly doubles per step.
   macro-coq-monorepo:
