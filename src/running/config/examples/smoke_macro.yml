@@ -1,12 +1,10 @@
-# Smoke test of the macro path: cpdf_merge + sedlex_tokenize (legacy anchors, ~1.5s
-# each) under OCaml 5.5.1, 1 invocation. Includes macro_base.yml. RUNNING_TAG=legacy is
-# required: a bare run applies default_run, whose rungs are not in this benchmarks:
-# list, and dies with "no benchmarks remain".
+# Smoke test of the macro path: cpdf_squeeze_default + sedlex_tokenize_default under
+# OCaml 5.5.1, 1 invocation. Includes macro_base.yml. Both are default_run rungs, so a
+# bare run (no RUNNING_TAG) selects them.
 # Run:
 #   RUNNING_MACRO_BENCH_DIR=~/macro-benches \
 #   CONFIG_FILE=src/running/config/examples/smoke_macro.yml \
 #   LOG_DIR=/tmp/smoke_macro \
-#   RUNNING_TAG=legacy \
 #     bash run_ocaml_bench_gc_sweep.sh
 
 includes:
@@ -16,18 +14,14 @@ overrides:
   invocations: 1
   benchmarks:
     macro-cpdf-monorepo:
-      - cpdf_merge
+      - cpdf_squeeze_default
     macro-sedlex:
-      - sedlex_tokenize
-    # lavyek is disabled in the base (private repo); re-enable the cell below if you have access.
-    macro-lavyek-monorepo: []
-    #   - lavyek_kv_1d
+      - sedlex_tokenize_default
 
 runtimes:
   ocaml-5.5.1:
     type: OCaml
     version: "5.5.1"
 
-# Sequential suites set their own ring via ocamlrunparam:; the lavyek triple is inert while lavyek is disabled.
 configs:
-  - "ocaml-5.5.1|perf_grp1|re_par-22|md_par-8|pin_lavyek"
+  - "ocaml-5.5.1|perf_grp1"
