@@ -87,3 +87,20 @@ def test_create_command_builds_the_resolved_sha(monkeypatch):
     assert OCaml._create_command(ident) == [
         "opam-compiler", "create", "ocaml/ocaml:" + SHA, "--switch", opam_roots.SWITCH,
         "--configure-command", "./configure --enable-flambda"]
+
+
+def test_dune_commit_replaces_dune_version(no_real_opam):
+    OCaml(name="dune-main", version="5.3.0", dune_commit=SHA)
+    [ident] = no_real_opam
+    assert ident["dune_commit"] == SHA and ident["dune_version"] is None
+
+
+def test_dune_commit_and_version_are_mutually_exclusive(no_real_opam):
+    with pytest.raises(ValueError):
+        OCaml(name="both", version="5.3.0", dune_commit=SHA, dune_version="3.22.1")
+
+
+def test_no_dune_commit_keeps_existing_root_keys(no_real_opam):
+    OCaml(name="plain", version="5.3.0")
+    [ident] = no_real_opam
+    assert "dune_commit" not in ident

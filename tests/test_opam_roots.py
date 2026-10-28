@@ -75,7 +75,7 @@ def test_key_changes_with_anything_that_changes_the_build():
     assert base.startswith("ocaml-aaaaaaaaaaaa-")
     for change in ({"configure_args": ["--enable-flambda"]}, {"dune_version": "3.22.1"},
                    {"opam_repository": SHA_A}, {"relocatable": True},
-                   {"kind": "OxCaml"}, {"sha": SHA_B}):
+                   {"kind": "OxCaml"}, {"sha": SHA_B}, {"dune_commit": SHA_B}):
         assert opam_roots.key(ident(**change)) != base, change
 
 

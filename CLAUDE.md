@@ -228,7 +228,11 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   so it stays fetchable if the PR branch is rewritten); once released, delete
   the pin and `running.switches ensure` rebuilds the tools switch. `OxCaml.__init__` refuses a compiler that rejects
   mode syntax, and defaults `dune_version:` to `3.22.2+ox` (the only dune
-  builds oxcaml/opam-repository's guards admit). `GITHUB_TOKEN` avoids GitHub's
+  builds oxcaml/opam-repository's guards admit). OxCaml main since oxcaml#5462
+  no longer bootstraps that dune: set `dune_commit:` (an ocaml/dune commit,
+  pinned with `opam pin add dune git+…#sha`, like macro-benches' CI `DUNE_SHA`)
+  instead. It enters the root identity only when set, so existing roots keep
+  their keys. `GITHUB_TOKEN` avoids GitHub's
   API rate limit while the plugin picks the recipe. That recipe comes from
   oxcaml/opam-repository's main branch at build time and is not part of the
   root's identity, so a recipe change alone does not give a new root.
