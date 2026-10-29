@@ -343,6 +343,10 @@ class OCaml(Runtime):
 
     @classmethod
     def _dune_version(cls, kwargs: Dict[str, Any]) -> Optional[str]:
+        if kwargs.get("dune_commit"):
+            if kwargs.get("dune_version"):
+                raise ValueError("dune_version and dune_commit are mutually exclusive")
+            return None
         return kwargs.get("dune_version", OCaml.DUNE_VERSION)
 
     def _identity(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
@@ -352,6 +356,7 @@ class OCaml(Runtime):
             str(self.version) if self.version else str(self.commit),
             configure_args=kwargs.get("configure_args"),
             dune_version=type(self)._dune_version(kwargs),
+            dune_commit=kwargs.get("dune_commit"),
             relocatable=bool(kwargs.get("relocatable")),
             opam_repository=kwargs.get("opam_repository"),
         )
@@ -382,12 +387,18 @@ class OCaml(Runtime):
 
         # Fatal: falling back to the tools switch's unpinned dune would
         # silently undo the pin. Use `dune_version:` instead.
-        dune_pkg = "dune.{}".format(ident["dune_version"])
+        switch = "--switch={}".format(opam_roots.SWITCH)
         try:
-            OCaml._run_checked([
-                opam, "install", dune_pkg, "ocamlfind",
-                "--switch={}".format(opam_roots.SWITCH), "--yes",
-            ], env=root.env())
+            if ident.get("dune_commit"):
+                dune_pkg = "git+{}#{}".format(opam_roots.DUNE_REPO, ident["dune_commit"])
+                OCaml._run_checked([opam, "pin", "add", "dune", dune_pkg, switch, "--yes"],
+                                   env=root.env())
+                OCaml._run_checked([opam, "install", "ocamlfind", switch, "--yes"],
+                                   env=root.env())
+            else:
+                dune_pkg = "dune.{}".format(ident["dune_version"])
+                OCaml._run_checked([opam, "install", dune_pkg, "ocamlfind", switch, "--yes"],
+                                   env=root.env())
         except subprocess.CalledProcessError as e:
             raise RuntimeError(
                 "Failed to install {}/ocamlfind in opam root {}.\n"
@@ -395,7 +406,7 @@ class OCaml(Runtime):
                 "whatever dune happens to be on PATH, so runtimes compared "
                 "against each other could be built by different dune versions.\n"
                 "If this compiler needs a different dune, set `dune_version:` "
-                "on the runtime in your config.".format(dune_pkg, root.path)
+                "or `dune_commit:` on the runtime in your config.".format(dune_pkg, root.path)
             ) from e
 
     def _ensure_satellite_switch(self, satellite_name: str) -> None:
@@ -659,7 +670,8 @@ class OxCaml(OCaml):
     def __init__(self, **kwargs):
         if "repo" not in kwargs:
             kwargs["repo"] = OxCaml.DEFAULT_REPO
-        kwargs.setdefault("dune_version", OxCaml.DUNE_VERSION)
+        if not kwargs.get("dune_commit"):
+            kwargs.setdefault("dune_version", OxCaml.DUNE_VERSION)
         super().__init__(**kwargs)
         self._assert_is_oxcaml()
 

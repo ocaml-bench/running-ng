@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 ROOTS_ENV_VAR = "RUNNING_OPAM_ROOTS"
+DUNE_REPO = "https://github.com/ocaml/dune.git"
 
 #: opam-repository commit every root is initialised from. Bump by PR, like any
 #: other pin; a runtime can override it with ``opam_repository:``.
@@ -91,10 +92,11 @@ def resolve_ref(repo: str, ref: str) -> str:
 def identity(kind: str, repo: str, ref: str, *,
              configure_args: Optional[List[str]] = None,
              dune_version: Optional[str] = None,
+             dune_commit: Optional[str] = None,
              relocatable: bool = False,
              opam_repository: Optional[str] = None) -> Dict[str, Any]:
     """Everything that determines a root's contents, with refs resolved to SHAs."""
-    return {
+    ident = {
         "kind": kind,
         "repo": repo,
         "ref": ref,
@@ -104,6 +106,10 @@ def identity(kind: str, repo: str, ref: str, *,
         "relocatable": relocatable,
         "opam_repository": opam_repository or OPAM_REPOSITORY_COMMIT,
     }
+    # Only when set, so existing roots keep their keys.
+    if dune_commit:
+        ident["dune_commit"] = resolve_ref(DUNE_REPO, dune_commit)
+    return ident
 
 
 def key(ident: Dict[str, Any]) -> str:

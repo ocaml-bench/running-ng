@@ -21,6 +21,7 @@ runtimes:
 
 `repo:` selects a fork (default `https://github.com/ocaml/ocaml.git`) consisting of a GitHub URL which is used by `opam-compiler` when resolving `user/repo:ref`. Use either
 `version:` or `commit:` to specify a runtime. `dune_version:` pins dune for a runtime.
+<!-- TODO(docs): new `dune_commit: <sha>` (ocaml/dune commit or ref, resolved to a SHA) pins dune from git instead of an opam version; mutually exclusive with dune_version; part of the root identity. Needed for OxCaml main, which 3.22.2+ox no longer bootstraps since oxcaml#5462. -->
 
 ## Opam roots
 

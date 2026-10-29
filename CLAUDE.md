@@ -228,7 +228,11 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   so it stays fetchable if the PR branch is rewritten); once released, delete
   the pin and `running.switches ensure` rebuilds the tools switch. `OxCaml.__init__` refuses a compiler that rejects
   mode syntax, and defaults `dune_version:` to `3.22.2+ox` (the only dune
-  builds oxcaml/opam-repository's guards admit). `GITHUB_TOKEN` avoids GitHub's
+  builds oxcaml/opam-repository's guards admit). OxCaml main since oxcaml#5462
+  no longer bootstraps that dune: set `dune_commit:` (an ocaml/dune commit,
+  pinned with `opam pin add dune git+…#sha`, like macro-benches' CI `DUNE_SHA`)
+  instead. It enters the root identity only when set, so existing roots keep
+  their keys. `GITHUB_TOKEN` avoids GitHub's
   API rate limit while the plugin picks the recipe. That recipe comes from
   oxcaml/opam-repository's main branch at build time and is not part of the
   root's identity, so a recipe change alone does not give a new root.
@@ -326,7 +330,8 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   `olly/overlays/`. A re-lock refuses an olly whose constraint on either changed.
 - **Patches** (`olly/patches/`, all meant to go upstream, ocaml-bench/running-ng#36):
   hdr_histogram's ctypes stanza cannot find ctypes' headers when ctypes is
-  vendored; ctypes needs an eta-expansion on OxCaml; olly's 5.3/5.4 counter
+  vendored, and dune main sandboxes the stub compile, so it also declares
+  them and `hdr_histogram.h` as `deps`; ctypes needs an eta-expansion on OxCaml; olly's 5.3/5.4 counter
   shim names `EV_C_MAJOR_ALLOCATED_WORDS`, which OxCaml (reporting `5.4.0+ox`)
   calls `EV_C_MAJOR_SLICE_ALLOC_WORDS`, so the patch picks a shim on the `+ox`
   suffix. A patch that no longer applies is fatal; drop it once upstream.
