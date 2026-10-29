@@ -330,7 +330,8 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   `olly/overlays/`. A re-lock refuses an olly whose constraint on either changed.
 - **Patches** (`olly/patches/`, all meant to go upstream, ocaml-bench/running-ng#36):
   hdr_histogram's ctypes stanza cannot find ctypes' headers when ctypes is
-  vendored; ctypes needs an eta-expansion on OxCaml; olly's 5.3/5.4 counter
+  vendored, and dune main sandboxes the stub compile, so it also declares
+  them and `hdr_histogram.h` as `deps`; ctypes needs an eta-expansion on OxCaml; olly's 5.3/5.4 counter
   shim names `EV_C_MAJOR_ALLOCATED_WORDS`, which OxCaml (reporting `5.4.0+ox`)
   calls `EV_C_MAJOR_SLICE_ALLOC_WORDS`, so the patch picks a shim on the `+ox`
   suffix. A patch that no longer applies is fatal; drop it once upstream.

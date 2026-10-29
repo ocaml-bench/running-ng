@@ -1,7 +1,10 @@
 --- a/duniverse/hdr_histogram_ocaml/lib/dune
 +++ b/duniverse/hdr_histogram_ocaml/lib/dune
-@@ -11,7 +11,7 @@
+@@ -9,9 +9,10 @@
+  (libraries unix)
+  (ctypes
    (external_library_name hdr_histogram)
++  (deps hdr_histogram.h (glob_files ../../ocaml-ctypes/src/ctypes/*.h))
    (build_flags_resolver
     (vendored
 -    (c_flags :standard "-I.")))
