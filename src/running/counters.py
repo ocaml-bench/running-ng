@@ -1,4 +1,4 @@
-"""Hardware counter backends: ``linux-perf``, ``freebsd-pmc``, ``none``.
+"""Hardware counter backends: ``linux-perf``, ``freebsd-pmc``, ``macos-mperf``, ``none``.
 
 Every backend attaches to a PID the harness owns (never a launcher-style tool),
 so the benchmark stays a direct child with a meaningful exit status. Output is
@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import select
+import stat
 import subprocess
 import time
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -102,7 +103,8 @@ class CounterBackend:
 PERF_ARM_TIMEOUT = 10.0
 
 def _start_perf_armed(perf_cmd: List[str], tmpdir: str, tag: str,
-                      skip: int = 0) -> Tuple[subprocess.Popen, Optional[int], Optional[int]]:
+                      skip: int = 0, subcommand: bool = True
+                      ) -> Tuple[subprocess.Popen, Optional[int], Optional[int]]:
     """Start `perf stat` and return only once its counters are armed.
 
     Popen returning does not mean perf has called perf_event_open; threads the
@@ -112,8 +114,11 @@ def _start_perf_armed(perf_cmd: List[str], tmpdir: str, tag: str,
 
     Returns (process, ctl_fd, ack_fd); the fds are the caller's to close. If the
     handshake fails (old perf, bad event list), perf is restarted without it and
-    (process, None, None) is returned.
+    (process, None, None) is returned. mperf speaks the same protocol but has
+    no `stat` subcommand.
     """
+    opts_at = skip + (2 if subcommand else 1)
+    tool = os.path.basename(perf_cmd[skip])
     ctl_path = os.path.join(tmpdir, "perf_ctl_{}.fifo".format(tag))
     ack_path = os.path.join(tmpdir, "perf_ack_{}.fifo".format(tag))
     ctl_fd = ack_fd = None
@@ -123,9 +128,9 @@ def _start_perf_armed(perf_cmd: List[str], tmpdir: str, tag: str,
         # O_RDWR on a fifo never blocks, and keeps perf's own open() from blocking.
         ctl_fd = os.open(ctl_path, os.O_RDWR)
         ack_fd = os.open(ack_path, os.O_RDWR)
-        # Options go after the `stat` subcommand, past any pin prefix.
-        armed_cmd = perf_cmd[:skip + 2] + ["--delay", "-1",
-                                    "--control", "fifo:{},{}".format(ctl_path, ack_path)] + perf_cmd[skip + 2:]
+        # Options go after the tool (and perf's `stat`), past any pin prefix.
+        armed_cmd = perf_cmd[:opts_at] + ["--delay", "-1",
+                                    "--control", "fifo:{},{}".format(ctl_path, ack_path)] + perf_cmd[opts_at:]
         p = subprocess.Popen(armed_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         os.write(ctl_fd, b"enable\n")
         # perf answers "ack\n" once the events are enabled.
@@ -133,17 +138,17 @@ def _start_perf_armed(perf_cmd: List[str], tmpdir: str, tag: str,
         buf = b""
         while time.time() < deadline:
             if p.poll() is not None:
-                raise RuntimeError("perf exited with {} before acking".format(p.returncode))
+                raise RuntimeError("{} exited with {} before acking".format(tool, p.returncode))
             r, _, _ = select.select([ack_fd], [], [], 0.05)
             if r:
                 buf += os.read(ack_fd, 64)
                 if b"ack" in buf:
                     return p, ctl_fd, ack_fd
-        raise RuntimeError("perf did not ack within {}s".format(PERF_ARM_TIMEOUT))
+        raise RuntimeError("{} did not ack within {}s".format(tool, PERF_ARM_TIMEOUT))
     except (OSError, RuntimeError) as e:
         logging.warning(
-            "perf --control handshake failed (%s); falling back to an unsynchronised "
-            "attach. Counters for threaded benchmarks may under-report.", e)
+            "%s --control handshake failed (%s); falling back to an unsynchronised "
+            "attach. Counters for threaded benchmarks may under-report.", tool, e)
         for fd in (ctl_fd, ack_fd):
             if fd is not None:
                 os.close(fd)
@@ -197,6 +202,59 @@ def parse_perf_ndjson(text: str) -> List[Dict]:
         except ValueError:
             pass
     return out
+
+
+# --- macOS: mperf ---------------------------------------------------------------
+
+_warned_mperf_not_setuid = False
+
+
+class MperfBackend(PerfBackend):
+    """macOS via mperf-stat (github.com/tmcgilchrist/mperf), which takes perf
+    stat's -p, --control and --json and writes the same NDJSON.
+
+    Programming the PMU needs root, so only a setuid-root install is used;
+    the benchmark and the output file stay the invoking user's. Event names are
+    mperf's own (`mperf-stat -l`): only cycles, instructions, branches and
+    branch-misses are shared with perf.
+    """
+
+    name = "macos-mperf"
+    VAL_KEY = "val_macos"
+    TOOL = "mperf-stat"
+
+    def available(self) -> bool:
+        global _warned_mperf_not_setuid
+        if not osinfo.IS_DARWIN:
+            return False
+        import shutil
+        path = shutil.which(self.TOOL)
+        if path is None:
+            return False
+        if os.geteuid() == 0:
+            return True
+        st = os.stat(path)
+        if st.st_uid == 0 and st.st_mode & stat.S_ISUID:
+            return True
+        if not _warned_mperf_not_setuid:
+            _warned_mperf_not_setuid = True
+            logging.warning(
+                "%s is not setuid root, so it cannot program the PMU; no "
+                "counters. Fix: sudo chown root:wheel %s && sudo chmod u+s %s",
+                path, path, path)
+        return False
+
+    def attach(self, pid: int, tmpdir: str, events: Sequence[str],
+               tag: str = "main",
+               pin_prefix: Sequence[str] = ()) -> Optional[CounterHandle]:
+        output = os.path.join(tmpdir, "mperf_{}.json".format(tag))
+        cmd = [self.TOOL, "-j", "-p", str(pid), "-o", output]
+        if events:
+            cmd.extend(["-e", ",".join(events)])
+        proc, ctl_fd, ack_fd = _start_perf_armed(
+            list(pin_prefix) + cmd, tmpdir, tag, skip=len(pin_prefix),
+            subcommand=False)
+        return CounterHandle(proc, output, (ctl_fd, ack_fd))
 
 
 # --- FreeBSD: pmcstat ----------------------------------------------------------
@@ -384,7 +442,7 @@ def _tool_on_path(name: str) -> bool:
     return shutil.which(name) is not None
 
 
-_BACKENDS = (PerfBackend, PmcStatBackend, CounterBackend)
+_BACKENDS = (PerfBackend, PmcStatBackend, MperfBackend, CounterBackend)
 
 
 def select_backend() -> CounterBackend:

@@ -52,7 +52,7 @@ global shadows them.
 
 `perf_grp1/2/3` collect hardware counters and GC telemetry in the same run, as
 structured JSON. On FreeBSD they use the hwpmc event names in `val_freebsd`
-instead. Three groups, sized
+instead, and on macOS mperf's in `val_macos`. Three groups, sized
 to fit the PMU without multiplexing: run one group at a time.
 
 | Modifier | Counters | For |
@@ -60,6 +60,10 @@ to fit the PMU without multiplexing: run one group at a time.
 | `perf_grp1` | task-clock, page-faults, cycles, instructions | baseline IPC |
 | `perf_grp2` | task-clock, cycles, stalled-cycles-frontend/backend | pipeline stalls |
 | `perf_grp3` | task-clock, cycles, cache-misses, LLC-load-misses, dTLB/iTLB-load-misses | cache and TLB |
+
+On macOS, `perf_grp2` counts map-stalls and dispatch-stalls, and `perf_grp3`
+counts l1d-cache-misses, l1d-tlb-misses, l1i-tlb-misses and l2-tlb-misses-data,
+since Apple silicon has no last-level-cache event.
 
 Every backend **attaches** to a process the harness already owns, so the benchmark
 stays a direct child whose exit status still distinguishes a crash from a clean

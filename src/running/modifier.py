@@ -181,6 +181,7 @@ class PerfAndOllyAttach(Modifier):
     `val_freebsd`: the same list in hwpmc's vocabulary, used instead of `val` by
     the freebsd-pmc backend (task-clock has no hwpmc equivalent; stall/cache
     groups are only approximations of the Linux ones).
+    `val_macos`: likewise in mperf's vocabulary, used by the macos-mperf backend.
     """
     def __init__(self, value_opts=None, **kwargs):
         super().__init__(value_opts, **kwargs)

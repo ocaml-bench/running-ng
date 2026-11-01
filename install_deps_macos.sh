@@ -5,9 +5,11 @@
 # running-ng builds them per config.
 # Set BENCHES_DIR / MACRO_BENCHES_DIR to use checkouts you already have;
 # an existing directory is never touched.
-# No hardware-counter backend on macOS: PerfAndOllyAttach
-# yields no counters ("none" backend), olly and rusage still work.
-# Usage: bash install_deps_macos.sh   (or bash install_deps.sh, which dispatches)
+# Hardware counters need mperf (github.com/tmcgilchrist/mperf) installed setuid
+# root. This builds it at a pinned commit; --setuid-mperf also installs it, calling
+# sudo for that step only. Without it PerfAndOllyAttach yields no counters ("none"
+# backend); olly and rusage still work.
+# Usage: bash install_deps_macos.sh [--setuid-mperf]   (or bash install_deps.sh, which dispatches)
 
 set -euo pipefail
 
@@ -16,6 +18,14 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
     exit 1
 fi
 
+SETUID_MPERF=0
+for arg in "$@"; do
+    case "$arg" in
+        --setuid-mperf) SETUID_MPERF=1 ;;
+        *) echo "ERROR: unknown option: $arg" >&2; exit 1 ;;
+    esac
+done
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "$ROOT_DIR/.." && pwd)"
 BENCHES_DIR="${BENCHES_DIR:-$PARENT_DIR/micro-benches}"
@@ -23,6 +33,11 @@ MACRO_BENCHES_DIR="${MACRO_BENCHES_DIR:-$PARENT_DIR/macro-benches}"
 # Not "5.4.0": this is the name running.switches and the FreeBSD installer declare.
 OPAM_SWITCH="${OPAM_SWITCH:-running-ng-tools}"
 OCAML_VERSION="${OCAML_VERSION:-5.4.0}"
+# The fork carries tmcgilchrist/mperf#6 and #7 (-p, perf's JSON) until they merge.
+MPERF_REPO="${MPERF_REPO:-https://github.com/udesou/mperf.git}"
+MPERF_COMMIT="${MPERF_COMMIT:-d812272bbc74c5e45456e95797881d1a4d68ad8b}"
+MPERF_DIR="${MPERF_DIR:-$HOME/.cache/running-ng/mperf}"
+MPERF_BIN=/usr/local/bin/mperf-stat
 
 # The ~/.opam directory format requires >= 2.2.
 OPAM_MIN_VERSION="2.2.0"
@@ -132,7 +147,39 @@ else
     ok "All Homebrew packages already installed"
 fi
 
-warn "No hardware counters on macOS: perf_grp1/2/3 record olly and rusage only."
+step "Building mperf at ${MPERF_COMMIT:0:7}"
+
+if [[ ! -d "$MPERF_DIR/.git" ]]; then
+    git clone --quiet "$MPERF_REPO" "$MPERF_DIR"
+fi
+if [[ "$(git -C "$MPERF_DIR" rev-parse HEAD)" != "$MPERF_COMMIT" ]]; then
+    git -C "$MPERF_DIR" fetch --quiet "$MPERF_REPO"
+    git -C "$MPERF_DIR" checkout --quiet --detach "$MPERF_COMMIT"
+fi
+make -C "$MPERF_DIR" --quiet -B
+ok "mperf-stat built in $MPERF_DIR"
+
+# setuid root lets it count without sudo; mperf drops root before running anything.
+mperf_installed() {
+    [[ -u $MPERF_BIN && $(stat -f %u "$MPERF_BIN") == 0 ]] \
+        && cmp -s "$MPERF_DIR/mperf-stat" "$MPERF_BIN"
+}
+MPERF_INSTALL=(sh -c "install -m 755 '$MPERF_DIR/mperf-stat' $MPERF_BIN \
+    && chown root:wheel $MPERF_BIN && chmod u+s $MPERF_BIN")
+if ! mperf_installed && [[ $SETUID_MPERF -eq 1 ]]; then
+    echo "  Installing $MPERF_BIN setuid root (sudo) ..."
+    sudo "${MPERF_INSTALL[@]}"
+fi
+if mperf_installed; then
+    ok "$MPERF_BIN is setuid root: perf_grp1/2/3 record hardware counters"
+else
+    warn "$MPERF_BIN is missing, out of date or not setuid root:"
+    warn "perf_grp1/2/3 record olly and rusage only. To install it, either rerun"
+    warn "  bash $0 --setuid-mperf"
+    warn "or run"
+    warn "  sudo install -m 755 $MPERF_DIR/mperf-stat $MPERF_BIN"
+    warn "  sudo chown root:wheel $MPERF_BIN && sudo chmod u+s $MPERF_BIN"
+fi
 warn "Do not use time_stats (needs GNU time) or olly_gc (expects olly on PATH)."
 
 # 4. opam (>= 2.2)
@@ -317,8 +364,10 @@ if [[ $ERRORS -eq 0 ]]; then
     echo "  make -C $MACRO_BENCHES_DIR setup"
     echo ""
     echo "Notes:"
-    echo "  - Use perf_grp1/2/3 as on Linux: without perf they record olly and"
-    echo "    rusage only. time_stats and olly_gc do not work on macOS."
+    echo "  - Use perf_grp1/2/3 as on Linux: they count with mperf-stat when it is"
+    echo "    installed setuid root (--setuid-mperf), and otherwise record olly and"
+    echo "    rusage only."
+    echo "    time_stats and olly_gc do not work on macOS."
     echo "  - The first run will take longer as it builds OCaml/OxCaml runtimes."
     echo "    Each compiler gets its own opam root under $(dirname "$OPAMROOT")/,"
     echo "    reused while its identity matches (python3 -m running.opam_roots list)."
