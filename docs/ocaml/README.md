@@ -11,6 +11,6 @@
 | [tags.md](tags.md) | selecting benchmarks by runtime-feature tag (`RUNNING_TAG`) |
 | [adding-a-benchmark.md](adding-a-benchmark.md) | the build-script contract and how to register a new program |
 | [adding-an-experiment.md](adding-an-experiment.md) | writing an experiment file and keeping the grid affordable |
+| [portability.md](portability.md) | what runs on Linux, FreeBSD and macOS, and how |
 
-The rest of `docs/` is upstream's mdBook (JVM oriented), this fork's benchmark
-methodology notes, and [freebsd-support.md](../freebsd-support.md).
+The rest of `docs/` is upstream's mdBook (JVM oriented).

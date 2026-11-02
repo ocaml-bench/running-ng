@@ -65,9 +65,9 @@ Every backend **attaches** to a process the harness already owns, so the benchma
 stays a direct child whose exit status still distinguishes a crash from a clean
 run. The FreeBSD groups are smaller (no usable `task-clock`, a hard ceiling of 7
 counters), and `RUNNING_NG_COUNTER_BACKEND` forces a backend, which is how the
-FreeBSD path is tested on Linux. The attach mechanics, and the full FreeBSD
-status, are in [CLAUDE.md](../../CLAUDE.md) and
-[freebsd-support.md](../freebsd-support.md).
+FreeBSD path is tested on Linux. The attach mechanics are in
+[CLAUDE.md](../../CLAUDE.md), and what each OS supports in
+[portability.md](portability.md).
 
 ## Allocation tracing
 
