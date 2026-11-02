@@ -178,16 +178,18 @@ class PerfAndOllyAttach(Modifier):
     code runs. Requires olly on PATH and perf installed.
 
     `val`: perf stat -e events, e.g. "cycles,instructions".
-    `val_freebsd`: the same list in hwpmc's vocabulary, used instead of `val` on
-    FreeBSD (task-clock has no hwpmc equivalent; stall/cache groups are only
-    approximations of the Linux ones).
+    `val_freebsd`: the same list in hwpmc's vocabulary, used instead of `val` by
+    the freebsd-pmc backend (task-clock has no hwpmc equivalent; stall/cache
+    groups are only approximations of the Linux ones).
     """
     def __init__(self, value_opts=None, **kwargs):
         super().__init__(value_opts, **kwargs)
-        val = self._kwargs.get("val", "")
-        if osinfo.IS_FREEBSD and self._kwargs.get("val_freebsd"):
-            val = self._kwargs["val_freebsd"]
-        self.perf_events: list = split_quoted(val) if val else []
+        self.perf_events: list = self.events_for("val")
+
+    def events_for(self, val_key: str) -> list:
+        """The events under `val_key` (a backend's VAL_KEY), or `val`'s if it has none."""
+        val = self._kwargs.get(val_key) or self._kwargs.get("val", "")
+        return split_quoted(val) if val else []
 
     def __str__(self) -> str:
         return "{} PerfAndOllyAttach events={}".format(super().__str__(), self.perf_events)

@@ -474,7 +474,7 @@ ever matters.
 - **Event names differ and are all-or-nothing.** `task-clock`, `cycles`,
   `branch-misses` and `cache-misses` do NOT resolve; one bad name
   makes pmcstat exit 71 and write nothing, so the whole group yields no
-  counters. Use the `perf_grp*_freebsd` modifiers, never the Linux ones.
+  counters. `perf_grp1/2/3` carry the FreeBSD names in `val_freebsd`.
   `pmc list-events` (not `pmc list`) enumerates what a CPU supports.
 - **Page faults come from a SOFT PMC**, `PAGE_FAULT.ALL` (`pmc.soft(3)`),
   aliased onto perf's `page-faults`. Soft PMCs are a separate hwpmc class with
@@ -484,7 +484,7 @@ ever matters.
   missing that one contract metric and no other; olly's `cpu_time` covers what
   it was wanted for.
 - **Counter ceiling is 7**: 3 fixed-function plus 4 programmable (four, not
-  eight, because SMT is on). `perf_grp3_freebsd` is exactly at that ceiling.
+  eight, because SMT is on). `perf_grp3`'s `val_freebsd` is exactly at that ceiling.
   hwpmc never multiplexes, so it hard-fails where perf would silently
   time-slice and scale.
 - **pmcstat's intermediate rows are stale, not sampled.** hwpmc saves a
@@ -521,13 +521,12 @@ says so.
   `combine()` `TypeError`. Change them through `overrides:`. A top-level
   `benchmarks:` dict *merges/extends* the base's set rather than replacing it,
   so narrowing the suite must also go through `overrides:`.
-- **No config needs a `_freebsd` variant.** `PerfAndOllyAttach.__init__` swaps
-  in the modifier's `val_freebsd` when `osinfo.IS_FREEBSD`, and `perf_grp1`'s
-  `val_freebsd` is byte-identical to `perf_grp1_freebsd`'s `val`, so one config
-  runs on both hosts; `CpuPin` derives its CPU list from the machine too. The
-  explicit `perf_grp{1,2,3}_freebsd` modifiers exist to *force* the hwpmc
-  vocabulary on a Linux host (`RUNNING_NG_COUNTER_BACKEND=freebsd-pmc`), which
-  `IS_FREEBSD` does not detect. `PORTABLE_CONFIGS` in
+- **No config needs a `_freebsd` variant.** Each backend names the
+  `PerfAndOllyAttach` key it reads (`VAL_KEY`: `val_freebsd` for
+  `freebsd-pmc`, `val` otherwise), and the harness takes that list once the
+  backend is chosen, so one config runs on both hosts and forcing
+  `RUNNING_NG_COUNTER_BACKEND=freebsd-pmc` on Linux picks up the hwpmc names
+  too. `CpuPin` derives its CPU list from the machine. `PORTABLE_CONFIGS` in
   `tests/test_freebsd_event_groups.py` is what keeps this true: it fails if a
   listed config names a group with no `val_freebsd`.
 - **`remote_host`, `minheap_multiplier`, `heap_range` and `spread_factor` do

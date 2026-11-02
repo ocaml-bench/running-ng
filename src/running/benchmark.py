@@ -327,11 +327,12 @@ class Benchmark(object):
         # Attach while the trampoline is still blocked; attaching (not
         # launching) keeps the benchmark our direct child.
         backend = counters.select_backend()
+        events = modifier.events_for(backend.VAL_KEY)
         # Keep the observers off the benchmark's CPUs; olly continuously
         # drains the runtime_events ring alongside the benchmark.
         observer_prefix = (osinfo.pin_command(self.cpu_pin.observer_cpus)
                            if self.cpu_pin is not None else [])
-        counter_handle = backend.attach(pid, tmpdir, modifier.perf_events, "main",
+        counter_handle = backend.attach(pid, tmpdir, events, "main",
                                         pin_prefix=observer_prefix)
 
         # RUSAGE_CHILDREN counts reaped children only; nothing else is reaped
@@ -390,7 +391,7 @@ class Benchmark(object):
                              ocaml_pid, pid, backend.name)
                 backend.kill(counter_handle)
                 counter_handle = backend.attach(
-                    ocaml_pid, tmpdir, modifier.perf_events, "reattach",
+                    ocaml_pid, tmpdir, events, "reattach",
                     pin_prefix=observer_prefix)
 
             # --output keeps the JSON apart from "[ring_id=0] Lost N events"

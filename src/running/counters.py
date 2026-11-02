@@ -39,6 +39,8 @@ class CounterBackend:
     """No counters: the base class and the degraded mode (olly and rusage still run)."""
 
     name = "none"
+    #: The PerfAndOllyAttach key holding events in this tool's names; `val` if absent.
+    VAL_KEY = "val"
     #: Raw tool event name -> canonical contract name.
     EVENT_ALIASES: Dict[str, str] = {}
 
@@ -260,6 +262,7 @@ class PmcStatBackend(CounterBackend):
     """
 
     name = "freebsd-pmc"
+    VAL_KEY = "val_freebsd"
 
     #: pmcstat spellings of perf events the contract vocabulary already maps.
     EVENT_ALIASES = {
