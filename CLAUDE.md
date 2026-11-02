@@ -188,9 +188,9 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   `modifiers.md`, `tags.md`, `adding-a-benchmark.md`,
   `adding-an-experiment.md`). Put new OCaml-facing prose there, not in the
   README.
-- `docs/` — upstream's mdBook (`docs/src/`, JVM-oriented) plus this fork's
-  methodology notes (`benchmark-calibration-triage.md`,
-  `benchmark-noise-and-comparison-plan.md`, `benchmark-coverage-gaps-plan.md`).
+- `docs/` — upstream's mdBook (`docs/src/`, JVM-oriented). The fork's docs
+  are `docs/ocaml/`; per-OS status is `docs/ocaml/portability.md` (a short
+  summary for humans) and the section below (the detail).
 
 ## Build / run
 
@@ -404,10 +404,6 @@ so unlike the olly/perf sidecars they are not appended to.
 
 ## Platform support (Linux, FreeBSD, macOS)
 
-Full FreeBSD status, and every discrepancy from Linux, is in
-`docs/freebsd-support.md`. Read that before debugging anything
-platform-specific; the summary below is the mechanism, that is the state.
-
 The goal is "the same harness runs everywhere and emits contract-conformant
 data", NOT numbers comparable across operating systems. Allocators, page
 policy and schedulers differ too much for the latter to mean anything.
@@ -430,6 +426,9 @@ measurement.
 
 Backends normalise to `{event, counter-value}`, stored under `"perf"` for
 backward compatibility, with `counter_backend` recording which tool ran.
+On every backend, `page-faults` reads low against rusage on short runs
+(0.47 on almabench under pmcstat): faults taken before the attach are a large
+fraction of the run. Expected, not a defect.
 `RUNNING_NG_COUNTER_BACKEND` forces one, which is how the FreeBSD path is
 exercised on Linux (see `tests/fixtures/fake_pmcstat.py`).
 
@@ -497,6 +496,10 @@ ever matters.
   reports what needs an administrator instead of failing halfway.
 - No bash in the base system, so the FreeBSD script and the probe are POSIX
   `sh`. `/bin/true` is `/usr/bin/true`; python3 is in `/usr/local/bin`.
+- **Macro runs 95 of 95** once the system libraries in macro-benches' README
+  are installed; `make setup` applies its five FreeBSD source patches.
+- **Untested on FreeBSD:** lavyek (private repo, disabled for everyone),
+  OxCaml, and run-to-run variance (every run so far was one invocation).
 
 ### macOS
 
@@ -615,6 +618,9 @@ says so.
   Configs now use a bare `perf_grp1` (lavyek still adds `re_par|md_par|pin_lavyek`);
   one specialised lab config still carries `re-25` but the suite values override it.
   Values are 5.5.0/32-core minimums — re-probe on a very different farm.
+  An overflow makes olly write `stats_reliable: false`; the harness warns, but
+  the flag is not a contract metric (that needs a `bench-contract` vocabulary
+  bump), so a contract consumer cannot filter those rows.
 - **`-d` (dry run) still builds compilers.** `opam_roots.ensure` is called from
   `OCaml.__init__`, which `Configuration.resolve_class()` runs before any
   dry-run check — so `-d` on a config with an unbuilt runtime compiles a
