@@ -53,6 +53,18 @@ def test_freebsd_path_collects_and_aliases_counters(fake_pmcstat_on_path):
     assert all(v > 0 for v in by_name.values())
 
 
+def test_freebsd_path_reads_val_freebsd(fake_pmcstat_on_path):
+    """A forced backend picks its own event names, as on a FreeBSD host."""
+    bm = BinaryBenchmark(Path("/bin/sleep"), ["1"], suite_name="s", name="smoke")
+    mod = PerfAndOllyAttach(name="perf_grp1", type="PerfAndOllyAttach",
+                            val="task-clock,cycles",
+                            val_freebsd="instructions,unhalted-cycles")
+    _out, companion, _status = bm._run_with_perf_and_olly(
+        ["/bin/sleep", "1"], {}, None, mod)
+    by_name = {e["event"] for e in json.loads(companion)["perf"]}
+    assert by_name == {"instructions", "cycles"}
+
+
 def test_freebsd_path_still_reports_rusage(fake_pmcstat_on_path):
     data, _ = _run("instructions")
     # on FreeBSD rusage is the only CPU-time source

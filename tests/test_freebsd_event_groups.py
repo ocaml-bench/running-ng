@@ -63,15 +63,14 @@ SAME_COUNTER = [("llc-misses", "longest_lat_cache.miss")]
 
 def _freebsd_groups(config):
     mods = yaml.safe_load((CONFIG_DIR / config).read_text())["modifiers"]
-    return {name: spec["val"].split(",")
-            for name, spec in mods.items() if name.endswith("_freebsd")}
+    return {name: spec["val_freebsd"].split(",")
+            for name, spec in mods.items() if spec.get("val_freebsd")}
 
 
 @pytest.mark.parametrize("config", BASE_CONFIGS)
 def test_the_three_groups_exist(config):
     groups = _freebsd_groups(config)
-    assert set(groups) == {"perf_grp1_freebsd", "perf_grp2_freebsd",
-                           "perf_grp3_freebsd"}
+    assert set(groups) == {"perf_grp1", "perf_grp2", "perf_grp3"}
 
 
 @pytest.mark.parametrize("config", BASE_CONFIGS)
@@ -185,15 +184,16 @@ PORTABLE_CONFIGS = ["smoke_micro.yml", "baseline_micro.yml",
                     "macro_fp_flambda_5.5.1.yml", "macro_sweep_5.5.1.yml"]
 
 
-def test_group_names_are_legal_modifier_names():
-    # Modifier rejects "-" in a name (reserved for value options)
+def test_the_freebsd_backend_reads_val_freebsd():
+    from running import counters
     from running.modifier import PerfAndOllyAttach
+    mods = yaml.safe_load((CONFIG_DIR / "micro_base.yml").read_text())["modifiers"]
     for name, events in _freebsd_groups("micro_base.yml").items():
-        m = PerfAndOllyAttach(name=name, type="PerfAndOllyAttach",
-                              val=",".join(events))
-        assert m.name == name
-        from running import counters
-        assert counters.split_event_list(m.perf_events) == events
+        spec = {k: v for k, v in mods[name].items() if k != "type"}
+        m = PerfAndOllyAttach(name=name, type="PerfAndOllyAttach", **spec)
+        chosen = m.events_for(counters.PmcStatBackend.VAL_KEY)
+        assert counters.split_event_list(chosen) == events
+        assert m.events_for(counters.PerfBackend.VAL_KEY) == m.perf_events
 
 
 def test_pending_events_carry_their_evidence():
@@ -208,7 +208,7 @@ def test_pending_events_are_confined_to_group_1(config):
     for name, events in _freebsd_groups(config).items():
         pending = set(events) & set(PENDING_HARDWARE_VERIFICATION)
         if pending:
-            assert name == "perf_grp1_freebsd", (
+            assert name == "perf_grp1", (
                 "{} carries unverified event(s) {}".format(name, pending))
 
 
@@ -284,7 +284,7 @@ def test_portable_configs_name_groups_that_carry_freebsd_events(config):
         assert groups, "{} names no counter group".format(config)
         for g in groups:
             assert g in base, "{} names undefined modifier {}".format(config, g)
-            assert base[g].get("val_freebsd") or g.endswith("_freebsd"), (
+            assert base[g].get("val_freebsd"), (
                 "{} uses {}, which carries no val_freebsd. On FreeBSD it would "
                 "fall back to the Linux events, of which only `instructions` "
                 "resolves under hwpmc, and pmcstat allocates all-or-nothing, "

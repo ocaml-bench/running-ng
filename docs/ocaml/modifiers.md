@@ -20,8 +20,7 @@ Shipped in the OCaml bases:
 | `re_par`, `md_par`, `pin_lavyek` | ditto + `CpuPin` | the parallel-suite counterparts (macro only) |
 | `pin_bench`, `pin_bench_mc` | `CpuPin` | one core for single-threaded benchmarks, the whole reserved set for self-pinning multi-domain ones (macro only) |
 | `plan`, `threads` | `EnvVar` | `MMTK_PLAN` / `MMTK_THREADS` |
-| `perf_grp1/2/3` | `PerfAndOllyAttach` | the three Linux counter groups below |
-| `perf_grp1/2/3_freebsd` | `PerfAndOllyAttach` | their FreeBSD (`pmcstat`) counterparts. Event names differ and pmcstat allocates all-or-nothing, so never mix the two spellings. |
+| `perf_grp1/2/3` | `PerfAndOllyAttach` | the three counter groups below |
 | `memtrace_grp1` | `MemtraceAttach` | allocation tracing; macro only, and scoped to `test_decompress` |
 | `time_stats` | `Wrapper` | `/usr/bin/time ...` |
 | `olly_gc` | `Wrapper` | `olly gc-stats` as a command prefix. `micro_base` only. |
@@ -51,8 +50,9 @@ global shadows them.
 
 ## Hardware counters
 
-`perf_grp1/2/3` (Linux) and `perf_grp1/2/3_freebsd` (FreeBSD) collect hardware
-counters and GC telemetry in the same run, as structured JSON. Three groups, sized
+`perf_grp1/2/3` collect hardware counters and GC telemetry in the same run, as
+structured JSON. On FreeBSD they use the hwpmc event names in `val_freebsd`
+instead. Three groups, sized
 to fit the PMU without multiplexing: run one group at a time.
 
 | Modifier | Counters | For |
