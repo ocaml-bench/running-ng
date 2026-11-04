@@ -90,7 +90,6 @@ def resolve_ref(repo: str, ref: str) -> str:
 
 def identity(kind: str, repo: str, ref: str, *,
              configure_args: Optional[List[str]] = None,
-             dune_version: Optional[str] = None,
              relocatable: bool = False,
              opam_repository: Optional[str] = None) -> Dict[str, Any]:
     """Everything that determines a root's contents, with refs resolved to SHAs."""
@@ -100,7 +99,6 @@ def identity(kind: str, repo: str, ref: str, *,
         "ref": ref,
         "sha": resolve_ref(repo, ref),
         "configure_args": list(configure_args or []),
-        "dune_version": dune_version,
         "relocatable": relocatable,
         "opam_repository": opam_repository or OPAM_REPOSITORY_COMMIT,
     }

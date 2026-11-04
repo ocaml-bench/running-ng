@@ -227,8 +227,7 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   (`pins:`; the commit is tagged `running-ng-pin-a94703a` on udesou/opam-compiler
   so it stays fetchable if the PR branch is rewritten); once released, delete
   the pin and `running.switches ensure` rebuilds the tools switch. `OxCaml.__init__` refuses a compiler that rejects
-  mode syntax, and defaults `dune_version:` to `3.22.2+ox` (the only dune
-  builds oxcaml/opam-repository's guards admit). `GITHUB_TOKEN` avoids GitHub's
+  mode syntax. `GITHUB_TOKEN` avoids GitHub's
   API rate limit while the plugin picks the recipe. That recipe comes from
   oxcaml/opam-repository's main branch at build time and is not part of the
   root's identity, so a recipe change alone does not give a new root.
@@ -238,7 +237,7 @@ tag filter is *intersection-only* (can't re-enable a program absent from
 - **One opam root per compiler identity**, under `$RUNNING_OPAM_ROOTS` (default
   `~/.cache/running-ng/opam-roots/`; the bench service points it under its state
   dir). The identity is everything that determines the root's contents: runtime
-  type, repo, the compiler's git SHA, `configure_args`, the dune version,
+  type, repo, the compiler's git SHA, `configure_args`,
   `relocatable`, and the opam-repository commit the root is initialised from
   (`opam_roots.OPAM_REPOSITORY_COMMIT`, bumped by PR; `opam_repository:` on a
   runtime overrides it). The directory name is `<type>-<sha12>-<hash>`, and
@@ -268,19 +267,26 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   --unused-for DAYS [--dry-run]` removes roots unused that long. Manual only.
 - Disk: ~0.1 GB of repository metadata per root plus the compiler switch
   (~0.7 GB for 5.4.1); first build of a 5.4.1 root ~100 s on 32 cores.
-- **`OCaml.DUNE_VERSION` (3.24.0) is pinned** so switches provisioned months
-  apart — and two switches compared within one run — get the same build tool,
-  and a **failure to install it is fatal**. It used to be 3.22.1 with a warn-and
-  -fall-back-to-`PATH` path, which quietly defeated the pin: 3.22.1 can't
-  bootstrap against 5.6 trunk, so a trunk switch got no dune and silently used
-  the tools switch's (installed *unconstrained*) — a 5.5.0-vs-trunk run built its
-  two sides with different dune versions. If a compiler needs a different dune,
-  say so with `dune_version:` on that runtime. **`OxCaml` inherits this path**
-  with its own default, `3.22.2+ox` (`OCamlMMTk` does not; it deliberately
-  installs no dune and uses the tools switch). Before raising the pin: build the *whole* suite on
-  the candidate, confirm it bootstraps on **trunk** and not just the release, and
-  note that an already-populated `macro-benches/duniverse/` keeps its old
-  `dune-project` until `make setup` is re-run.
+- **dune is the tools switch's, for every runtime**: `switches.py` pins it
+  (3.24.2) and runtime roots install only `ocamlfind`, so two runtimes compared
+  in one run, or provisioned months apart, build with the same dune, and it is
+  built with stock OCaml so it never has to bootstrap on the compiler under
+  test. It reaches builds through `PATH` (the launch scripts put the tools
+  switch's `bin` after the runtime switch's), and `tool_versions.dune` in the
+  contract records it. `dune_version:` / `dune_commit:` on a runtime are
+  refused. History: each root used to install its own pinned dune, which
+  broke whenever a compiler outran it: 3.22.1 could not bootstrap on 5.6
+  trunk, OxCaml needed oxcaml/opam-repository's `3.22.2+ox`, and OxCaml main
+  after oxcaml#5462 bootstrapped neither. Before raising the pin: build the
+  *whole* suite with the candidate on stock, trunk and OxCaml, and note that
+  an already-populated `macro-benches/duniverse/` keeps its old `dune-project`
+  until `make setup` is re-run.
+  Also build olly: dune 3.25 (ocaml/dune#16223) sandboxes ctypes' generated
+  stub compile, and olly's vendored hdr_histogram then cannot find its own
+  header (fixed upstream by ocaml-multicore/hdr_histogram_ocaml#15, open) or
+  ctypes' headers (a dune limitation with a vendored ctypes). The fix for both
+  is declaring them as `deps` in
+  `olly/patches/hdr_histogram-vendored-ctypes.patch`; it is in closed #56.
 - The overlay repo is **opt-in** (`relocatable: true`) and scoped to one switch.
   It used to be added to every switch with `--set-default`; see the gotcha below.
 - `configure_args:` is honoured (passed as `--configure-command "./configure …"`).
@@ -316,7 +322,8 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   depends, snapshotted in `olly-depends`. A commit whose depends differ is
   re-locked into `olly/locks/` (installs `opam-monorepo.0.4.3` into the tools
   switch on first use; 0.5 needs dune >= 3.24). `dune` and `dune-configurator`
-  are held < 3.23 because OxCaml roots use dune 3.22.2+ox. Python fetches the
+  are held < 3.23, a leftover from OxCaml roots having their own 3.22.2+ox;
+  it can rise to the tools switch's dune at the next re-lock. Python fetches the
   archives itself, so a normal run needs no opam-monorepo.
 - **To bump olly:** `python -m running.olly lock <sha>`, set `COMMIT`, check the
   patches still apply (`python -m running.olly prepare`), run a config with
