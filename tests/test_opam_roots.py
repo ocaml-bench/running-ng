@@ -33,7 +33,7 @@ def fake_init(monkeypatch):
 def ident(**kw):
     kw.setdefault("configure_args", [])
     return dict({"kind": "OCaml", "repo": "r", "ref": "5.4.1", "sha": SHA_A,
-                 "dune_version": "3.24.0", "relocatable": False,
+                 "relocatable": False,
                  "opam_repository": SHA_B}, **kw)
 
 
@@ -73,7 +73,7 @@ def test_key_changes_with_anything_that_changes_the_build():
     base = opam_roots.key(ident())
     assert opam_roots.key(ident()) == base
     assert base.startswith("ocaml-aaaaaaaaaaaa-")
-    for change in ({"configure_args": ["--enable-flambda"]}, {"dune_version": "3.22.1"},
+    for change in ({"configure_args": ["--enable-flambda"]},
                    {"opam_repository": SHA_A}, {"relocatable": True},
                    {"kind": "OxCaml"}, {"sha": SHA_B}):
         assert opam_roots.key(ident(**change)) != base, change

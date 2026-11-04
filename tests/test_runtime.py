@@ -31,7 +31,7 @@ def test_construction_ensures_the_root_eagerly(no_real_opam, tmp_path):
     runtime = OCaml(name="ocaml-v5.3", version="5.3.0")
     [ident] = no_real_opam
     assert ident["kind"] == "OCaml" and ident["ref"] == "5.3.0" and ident["sha"] == SHA
-    assert ident["dune_version"] == OCaml.DUNE_VERSION
+    assert "dune_version" not in ident
     assert runtime.get_switch_name() == opam_roots.SWITCH
     assert runtime.get_executable() == (
         tmp_path / opam_roots.key(ident) / opam_roots.SWITCH / "bin" / "ocaml")
@@ -40,10 +40,9 @@ def test_construction_ensures_the_root_eagerly(no_real_opam, tmp_path):
 
 def test_identity_carries_build_settings(no_real_opam):
     OCaml(name="flambda", version="5.3.0", configure_args=["--enable-flambda"],
-          dune_version="3.22.1", opam_repository="d" * 40)
+          opam_repository="d" * 40)
     [ident] = no_real_opam
     assert ident["configure_args"] == ["--enable-flambda"]
-    assert ident["dune_version"] == "3.22.1"
     assert ident["opam_repository"] == "d" * 40
 
 
@@ -53,10 +52,17 @@ def test_runtime_name_does_not_change_the_root(no_real_opam):
     assert a.get_switch_prefix() == b.get_switch_prefix()
 
 
-def test_mmtk_installs_no_dune(no_real_opam):
+@pytest.mark.parametrize("key", ["dune_version", "dune_commit"])
+def test_per_runtime_dune_is_refused(no_real_opam, key):
+    with pytest.raises(ValueError, match=key):
+        OCaml(name="pinned", version="5.3.0", **{key: "3.22.1"})
+    assert no_real_opam == []
+
+
+def test_mmtk_root(no_real_opam):
     OCamlMMTk(name="mmtk", commit=SHA)
     [ident] = no_real_opam
-    assert ident["kind"] == "OCamlMMTk" and ident["dune_version"] is None
+    assert ident["kind"] == "OCamlMMTk"
     assert ident["repo"] == OCamlMMTk.DEFAULT_REPO
 
 

@@ -10,8 +10,8 @@ Please open a PR against each repo to add the benchmark you would like to run. A
 
 ## 1. Write the benchmark and its build script
 
-The current infrastructure allows running-ng to activate the runtime's opam switch (with the compiler, `dune` and installed
-packages on `PATH`) and then run `<name>.build.sh` in the benchmark directory, passing four environment variables (predefined by the benchmark configuration):
+The current infrastructure allows running-ng to activate the runtime's opam switch (with the compiler and installed
+packages on `PATH`, and `dune` from running-ng's own separate tools switch) and then run `<name>.build.sh` in the benchmark directory, passing four environment variables (predefined by the benchmark configuration):
 
 | Variable | Meaning | Fallback when unset |
 |---|---|---|

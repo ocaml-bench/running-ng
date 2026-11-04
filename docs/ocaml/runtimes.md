@@ -20,12 +20,12 @@ runtimes:
 ```
 
 `repo:` selects a fork (default `https://github.com/ocaml/ocaml.git`) consisting of a GitHub URL which is used by `opam-compiler` when resolving `user/repo:ref`. Use either
-`version:` or `commit:` to specify a runtime. `dune_version:` pins dune for a runtime.
+`version:` or `commit:` to specify a runtime.
 
 ## Opam roots
 
 A runtime's opam root is reused as long as everything that determines its
-contents is unchanged: the compiler commit, `configure_args`, `dune_version`,
+contents is unchanged: the compiler commit, `configure_args`,
 `relocatable`, and the opam-repository commit running-ng pins (`opam_repository:`
 overrides it for one runtime). A change to one of these makes the runtime get a new
 root. Because each run holds a shared lock on the roots it uses, concurrent runs are safe.
@@ -49,7 +49,7 @@ The compiler is configured by the `oxcaml-compiler` recipe in
 oxcaml/opam-repository, which already enables flambda2, runtime 5, multidomain
 and poll insertion (multicore needs the last two). `configure_args` are added
 after the recipe's own flags, so they can also override them. The default repo
-is `https://github.com/oxcaml/oxcaml.git`, and dune defaults to `3.22.2+ox`.
+is `https://github.com/oxcaml/oxcaml.git`.
 
 running-ng checks that the compiler accepts OxCaml's mode syntax and refuses to
 use it otherwise. Set `GITHUB_TOKEN` to avoid GitHub's API rate limit while the
