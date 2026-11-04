@@ -199,10 +199,11 @@ suites:
         args: ""
         ocamlrunparam: "e=20,d=32"
 
-  # coqc_tree_* reduce a 2^D-deep unary nat (D=17/18/19); work roughly doubles per step.
+  # coqc_tree_* reduce a 2^D-deep unary nat (D=19/20/21); work roughly doubles per step.
   macro-coq-monorepo:
     type: OCamlBenchmarkSuite
-    ocamlrunparam: "e=25,d=2"   # ring overflows under olly; see macro-menhir-monorepo
+    # No ocamlrunparam: rocq sets its own GC (32M-word minor heap, o=200) only
+    # when OCAMLRUNPARAM is unset, and with it olly's default ring suffices.
     timeout: 900
     programs:
       coqc_corelib_stress:
@@ -1296,8 +1297,7 @@ tags:
   # Measurement facts with no tag to live in:
   #   - frama-c and goblint fork the C preprocessor inside the measured
   #     region, so that child's CPU is outside the parent's counters.
-  #   - coqc_bin.exe execve's itself into rocqworker, and its wrapper shells
-  #     out to ocamlfind twice per invocation.
+  #   - coqc_bin.exe execve's itself into rocqworker.
   # ---------------------------------------------------------------------
 
   weak_refs:
