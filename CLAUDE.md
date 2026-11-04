@@ -281,6 +281,10 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   *whole* suite with the candidate on stock, trunk and OxCaml, and note that
   an already-populated `macro-benches/duniverse/` keeps its old `dune-project`
   until `make setup` is re-run.
+  Also build olly: dune `main` (not yet in a release as of 3.24.2) sandboxes
+  ctypes' generated stub compile, and olly's vendored hdr_histogram then cannot
+  find its own and ctypes' headers. The fix is declaring them as `deps` in
+  `olly/patches/hdr_histogram-vendored-ctypes.patch`; it is in closed #56.
 - The overlay repo is **opt-in** (`relocatable: true`) and scoped to one switch.
   It used to be added to every switch with `--set-default`; see the gotcha below.
 - `configure_args:` is honoured (passed as `--configure-command "./configure …"`).
