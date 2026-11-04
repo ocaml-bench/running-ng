@@ -747,6 +747,8 @@ modifiers:
     val: "task-clock,cycles,stalled-cycles-frontend,stalled-cycles-backend"
     # Approximations of perf's stalled-cycles-*; not comparable with Linux numbers.
     val_freebsd: "instructions,unhalted-cycles,idq_uops_not_delivered.core,resource_stalls.any"
+    # mperf event names, used instead of val by the macos-mperf backend.
+    val_macos: "task-clock,cycles,map-stalls,dispatch-stalls"
   perf_grp3:
     type: PerfAndOllyAttach
     val: "task-clock,cycles,cache-misses,LLC-load-misses,dTLB-load-misses,iTLB-load-misses"
@@ -754,6 +756,8 @@ modifiers:
     # with Linux LLC-load-misses. Do not add llc-misses: same counter as
     # longest_lat_cache.miss and it would burn one of four programmable slots (group is at the ceiling).
     val_freebsd: "instructions,unhalted-cycles,longest_lat_cache.miss,mem_load_uops_retired.l3_miss,dtlb_load_misses.walk_completed,itlb_misses.walk_completed"
+    # Apple silicon has no last-level-cache event; L1 and the TLBs stand in.
+    val_macos: "task-clock,cycles,l1d-cache-misses,l1d-tlb-misses,l1i-tlb-misses,l2-tlb-misses-data"
   # Needs the binary to call Memtrace.trace_if_requested (); macro-benches patches only
   # test_decompress. excludes is not a guard: an unpatched benchmark silently produces
   # no trace (runbms warns "memtrace was requested but the benchmark produced no trace").

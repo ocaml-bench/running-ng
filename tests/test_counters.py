@@ -196,6 +196,8 @@ def test_select_backend_matches_this_host():
         assert b.name in ("linux-perf", "none")
     elif osinfo.IS_FREEBSD:
         assert b.name in ("freebsd-pmc", "none")
+    elif osinfo.IS_DARWIN:
+        assert b.name in ("macos-mperf", "none")
 
 
 def test_backend_can_be_forced(monkeypatch):

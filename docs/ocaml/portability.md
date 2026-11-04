@@ -7,8 +7,8 @@ operating systems.
 | | Linux | FreeBSD | macOS |
 |---|---|---|---|
 | Install | `install_deps.sh` | `install_deps.sh` (no root) | `install_deps.sh` |
-| Hardware counters | `perf` | `pmcstat` (after `kldload hwpmc`) | none |
-| task-clock | yes | no | no |
+| Hardware counters | `perf` | `pmcstat` (after `kldload hwpmc`) | `mperf-stat` (setuid root) |
+| task-clock | yes | no | yes |
 | CPU pinning (`CpuPin`) | `taskset` | `cpuset` | not available |
 | olly and rusage | yes | yes | yes |
 

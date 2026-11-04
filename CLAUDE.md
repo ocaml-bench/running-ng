@@ -144,7 +144,7 @@ tag filter is *intersection-only* (can't re-enable a program absent from
     Everything degrades rather than raising, because it all runs on the
     measurement path.
   - `counters.py` — hardware counter backends (`linux-perf`, `freebsd-pmc`,
-    `none`) behind one interface.
+    `macos-mperf`, `none`) behind one interface.
   - `config.py` — includes/overrides merge, `validate()`, `validate_tags()`,
     `apply_tag_filter()`.
   - `contract/` — native contract emission (`native.py` orchestrates,
@@ -414,9 +414,10 @@ policy and schedulers differ too much for the latter to mean anything.
 |---|---|---|
 | `linux-perf` | `perf stat --json --inherit -p PID` | arms via the `--control` fifo handshake |
 | `freebsd-pmc` | `pmcstat -C -d -t PID -p EVENT` | arms by waiting for pmcstat's `#` header |
+| `macos-mperf` | `mperf-stat -j -p PID` | perf's `--control` handshake and NDJSON; setuid-root install only |
 | `none` | nothing | supported configuration, not a failure; olly and rusage still run |
 
-All three ATTACH to a PID the harness already owns. This is deliberate and
+All of them ATTACH to a PID the harness already owns. This is deliberate and
 should not be "simplified" into letting the tool launch the benchmark:
 attaching is what keeps the benchmark our own direct child, so its exit status
 still tells a crash from a clean run and a timeout can still kill it.
@@ -430,7 +431,8 @@ On every backend, `page-faults` reads low against rusage on short runs
 (0.47 on almabench under pmcstat): faults taken before the attach are a large
 fraction of the run. Expected, not a defect.
 `RUNNING_NG_COUNTER_BACKEND` forces one, which is how the FreeBSD path is
-exercised on Linux (see `tests/fixtures/fake_pmcstat.py`).
+exercised on Linux (see `tests/fixtures/fake_pmcstat.py`, and
+`fake_mperf.py` for macOS).
 
 ### CPU pinning (`CpuPin`, `osinfo.partition_cpus`)
 
@@ -503,13 +505,37 @@ ever matters.
 
 ### macOS
 
-Runs on the `none` backend. There is no counter tool wired up: mperf
-(github.com/tmcgilchrist/mperf) is the candidate, but it requires root for
-every invocation (`kpc_force_all_ctrs_set` claims the PMU globally, which no
-entitlement or fork arrangement avoids) and it launches rather than attaches.
+Counters come from mperf (github.com/tmcgilchrist/mperf), which speaks perf
+stat's `-p`, `--delay -1 --control fifo:` and `--json` (perf 7.0's shape), so
+`MperfBackend` is `PerfBackend` with a different command line and
+`parse_perf_ndjson` reads its output unchanged. Until tmcgilchrist/mperf#6 and
+#7 merge, that means udesou/mperf's `perf-json` branch.
+
+- **Root, via setuid only.** Programming the PMU needs root
+  (`kpc_force_all_ctrs_set` claims it globally; no entitlement avoids that).
+  The backend is used only when `mperf-stat` on PATH is setuid root (or the
+  harness is root), and warns once with the fix otherwise. mperf runs the
+  target, `-o` and `--control` as the invoking user, and a setuid install may
+  only `-p` that user's processes. `install_deps_macos.sh` builds it at
+  `MPERF_COMMIT` in `~/.cache/running-ng/mperf`; `--setuid-mperf` installs it
+  to `/usr/local/bin` with one sudo, and without it the script prints the
+  commands.
+- **Event names are mperf's own** (`mperf-stat -l`): only cycles,
+  instructions, branches and branch-misses match perf. `perf_grp2/3` carry a
+  `val_macos`, which `MperfBackend` reads (its `VAL_KEY`); Apple silicon has no
+  last-level-cache event, so grp3 uses L1 and TLB misses. mperf rejects the
+  whole list over one unknown name; `tests/test_mperf_backend.py` pins the
+  groups to names resolved on an M5.
+- **task-clock and page-faults come from a kernel trace** (context switches
+  and `vm_fault`), not the PMU. Through the harness, page-faults reads about
+  1,700 below rusage: faults before the `-p` attach are missed, as with perf.
+  Launched directly, it is about 95 below, as macOS counts some exec/dyld
+  faults without tracing them.
+- **One mperf at a time.** The PMU and kdebug trace are system-wide; runs are
+  sequential, so this only matters if something else on the Mac is profiling.
+
 macOS also has no API that binds a process to a core, so `pin_command` returns
 `[]` and `CpuPin` contributes nothing there by design.
-So configs keep `perf_grp1/2/3` there (olly and rusage, no counters).
 `time_stats` fails (BSD `time` has no `-f`) and `olly_gc` runs a bare `olly`,
 which is not on PATH now that olly is built per runtime; `install_deps_macos.sh`
 says so.
@@ -523,7 +549,7 @@ says so.
   so narrowing the suite must also go through `overrides:`.
 - **No config needs a `_freebsd` variant.** Each backend names the
   `PerfAndOllyAttach` key it reads (`VAL_KEY`: `val_freebsd` for
-  `freebsd-pmc`, `val` otherwise), and the harness takes that list once the
+  `freebsd-pmc`, `val_macos` for `macos-mperf`, `val` otherwise), and the harness takes that list once the
   backend is chosen, so one config runs on both hosts and forcing
   `RUNNING_NG_COUNTER_BACKEND=freebsd-pmc` on Linux picks up the hwpmc names
   too. `CpuPin` derives its CPU list from the machine. `PORTABLE_CONFIGS` in

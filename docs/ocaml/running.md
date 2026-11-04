@@ -33,9 +33,13 @@ libffi (to build [`olly`](https://github.com/tarides/runtime_events_tools)).
 
 Hardware counters are optional and per-OS: Linux uses `perf` (`perf stat ls` to
 check access, `sudo sysctl kernel.perf_event_paranoid=1` if denied), FreeBSD uses
-`pmcstat` (`kldload hwpmc`, no root needed after that), macOS has no backend at
-all. A run with no counter backend is a supported configuration, not a failure:
-olly and rusage still produce data.
+`pmcstat` (`kldload hwpmc`, no root needed after that), and macOS uses
+[mperf](https://github.com/tmcgilchrist/mperf), which `install_deps.sh` installs.
+mperf needs setuid root, as its
+[README](https://github.com/tmcgilchrist/mperf#running-without-sudo) describes:
+pass `--setuid-mperf` or run the commands the script prints.
+Note that metrics are still produced through olly and rusage when no perf
+variant (`perf`, `pmcstat` or `mperf-stat`) is installed.
 
 ## Subcommands
 
