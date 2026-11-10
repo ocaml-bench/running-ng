@@ -224,13 +224,22 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   (OxCaml has no compiler opam file in its tree; the released plugin silently
   builds a *stock* compiler from OxCaml's source). Until #42 is released,
   `switches.py` pins the tools switch's opam-compiler to that PR's commit
-  (`pins:`; the commit is tagged `running-ng-pin-a94703a` on udesou/opam-compiler
+  (`pins:`; the commit is tagged `running-ng-pin-3add038` on udesou/opam-compiler
   so it stays fetchable if the PR branch is rewritten); once released, delete
-  the pin and `running.switches ensure` rebuilds the tools switch. `OxCaml.__init__` refuses a compiler that rejects
-  mode syntax. `GITHUB_TOKEN` avoids GitHub's
-  API rate limit while the plugin picks the recipe. That recipe comes from
-  oxcaml/opam-repository's main branch at build time and is not part of the
-  root's identity, so a recipe change alone does not give a new root.
+  the pin and `running.switches ensure` rebuilds the tools switch. The plugin
+  installs the dune and menhir the commit's `oxcaml-dev.opam` asks for into a
+  build switch inside the root, then builds OxCaml into the runtime switch
+  with that dune. The runtime switch gets only the compiler (no oxcaml/opam-repository,
+  no `+ox` packages), so micro benchmarks whose build scripts `opam install`
+  packages fail on OxCaml. Nothing beyond the build's own flags is configured:
+  OxCaml runtimes need `configure_args: ["--enable-multidomain",
+  "--enable-poll-insertion", "--enable-stack-checks"]` (the old recipe's flags;
+  without the first two, multicore programs fail with "failed to allocate
+  domain"). `OxCaml.__init__` refuses a compiler that rejects mode syntax.
+  `GITHUB_TOKEN` avoids GitHub's API rate limit while the plugin resolves the
+  source. Roots built by the earlier recipe flow were removed from this machine
+  2026-11-10; the identity does not record the build method, so remove any
+  left elsewhere.
 
 ### Opam roots (`opam_roots.py`)
 

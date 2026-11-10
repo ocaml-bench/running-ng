@@ -42,9 +42,9 @@ SWITCHES: Dict[str, Dict] = {
             # build both suites with it on stock, trunk and OxCaml.
             "dune": "3.24.2",
             # OxCaml support (ocaml-opam/opam-compiler#42); drop once it is released.
-            # Tagged running-ng-pin-a94703a on the fork so it outlives the PR branch.
+            # Tagged running-ng-pin-3add038 on the fork so it outlives the PR branch.
             "opam-compiler": "git+https://github.com/udesou/opam-compiler.git"
-                             "#a94703a4e0337f49177a2b2be0968c21c091d71a",
+                             "#3add0383b49d2177f66d41cf2b349a1016644e82",
         },
     },
 }
