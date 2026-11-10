@@ -39,21 +39,23 @@ root. Because each run holds a shared lock on the roots it uses, concurrent runs
 oxcaml-trunk:
   type: OxCaml
   commit: "<sha>"
-  # configure_args: ["--enable-frame-pointers"]   # optional
+  configure_args: ["--enable-multidomain", "--enable-poll-insertion", "--enable-stack-checks"]
 ```
 
 An OxCaml runtime gets its own opam root. The compiler is built by
 `opam-compiler create oxcaml/oxcaml:<commit>`, currently using `opam-compiler` from
 ocaml-opam/opam-compiler#42 (pinned in the tools switch until it is released).
-The compiler is configured by the `oxcaml-compiler` recipe in
-oxcaml/opam-repository, which already enables flambda2, runtime 5, multidomain
-and poll insertion (multicore needs the last two). `configure_args` are added
-after the recipe's own flags, so they can also override them. The default repo
-is `https://github.com/oxcaml/oxcaml.git`.
+It installs the dune and menhir that the commit's `oxcaml-dev.opam` requires into
+a build switch in the same root, and builds OxCaml with them. The runtime switch
+gets only the compiler. The default repo is `https://github.com/oxcaml/oxcaml.git`.
 
-running-ng checks that the compiler accepts OxCaml's mode syntax and refuses to
-use it otherwise. Set `GITHUB_TOKEN` to avoid GitHub's API rate limit while the
-recipe is fetched.
+No configure flags are added beyond what the build needs, so OxCaml runtimes set
+them in `configure_args`. Without multidomain and poll insertion, multicore
+programs fail with `failed to allocate domain`.
+
+The runtime switch has no `+ox` packages, so micro benchmarks whose build
+scripts `opam install` packages do not build on OxCaml
+(ocaml-bench/micro-benches#22).
 
 ## MMTk
 

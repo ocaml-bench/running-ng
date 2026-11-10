@@ -357,8 +357,8 @@ class OCaml(Runtime):
 
     @classmethod
     def _build_root(cls, ident: Dict[str, Any], root: "opam_roots.Root") -> None:
-        """Build the compiler at the identity's SHA, then ocamlfind. dune
-        comes from the tools switch, so every runtime builds with the same one."""
+        """Build the compiler at the identity's SHA. dune and ocamlfind come
+        from the tools switch, so every runtime builds with the same ones."""
         opam = OCaml._find_opam()
         OCaml._run_checked(cls._create_command(ident), env=root.env())
 
@@ -370,15 +370,10 @@ class OCaml(Runtime):
                 "--switch={}".format(opam_roots.SWITCH),
             ], env=root.env())
 
-        OCaml._run_checked([
-            opam, "install", "ocamlfind",
-            "--switch={}".format(opam_roots.SWITCH), "--yes",
-        ], env=root.env())
-
     def _ensure_satellite_switch(self, satellite_name: str) -> None:
         """A per-benchmark satellite switch in this runtime's root: an empty
         registered switch whose contents are a copy of the runtime switch.
-        Needs ``relocatable: true``, or the copied dune/ocamlfind point at the
+        Needs ``relocatable: true``, or the copied compiler points at the
         runtime switch's path."""
         root = self._root
         if OCaml._switch_exists(root, satellite_name):
