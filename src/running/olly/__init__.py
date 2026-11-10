@@ -46,7 +46,8 @@ OPAM_OVERLAYS = ("git+https://github.com/dune-universe/opam-overlays.git"
                  "#632df22c65362cb34fd792f701d7d2a6518cdb60")
 #: System libraries olly's deps build against; not vendored.
 OPAM_PROVIDED = ["conf-pkg-config", "conf-cmake", "conf-zlib", "conf-libffi"]
-#: OxCaml roots use dune 3.22.2+ox; dune-configurator must not need newer.
+#: dune-configurator must not need a newer dune than builds use. The bound
+#: dates from OxCaml roots' own 3.22.2+ox; the tools switch's dune now allows more.
 LOCK_CONSTRAINTS = ['"dune" {< "3.23"}', '"dune-configurator" {< "3.23"}']
 OPAM_MONOREPO = "opam-monorepo.0.4.3"
 

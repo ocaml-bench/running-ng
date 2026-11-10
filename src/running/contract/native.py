@@ -239,6 +239,9 @@ class NativeEmitter:
         pv = _tool_version(["perf", "--version"])
         if pv:
             tv["perf"] = pv
+        dv = _tool_version(["dune", "--version"])
+        if dv:
+            tv["dune"] = dv
         ov = _olly_version()
         if ov:
             tv["olly"] = ov

@@ -226,12 +226,6 @@ class OCaml(Runtime):
     RELOCATABLE_REPO = "git+https://github.com/dra27/opam-repository.git#relocatable"
     _opam_bin: Optional[str] = None
 
-    # Pinned so switches provisioned at different times, or compared within
-    # one run, get the same build tool. 3.22.1 cannot bootstrap on 5.6 trunk.
-    # Before raising: build all macro benchmarks on the candidate and confirm
-    # it bootstraps on trunk. Override per runtime with `dune_version:`.
-    DUNE_VERSION = "3.24.0"
-
     @staticmethod
     def _safe_key(raw: str) -> str:
         sanitized = re.sub(r"[^a-zA-Z0-9._-]+", "_", raw).strip("._-")
@@ -341,17 +335,12 @@ class OCaml(Runtime):
             )
         return "{}/{}:{}".format(m.group(1), m.group(2), ref)
 
-    @classmethod
-    def _dune_version(cls, kwargs: Dict[str, Any]) -> Optional[str]:
-        return kwargs.get("dune_version", OCaml.DUNE_VERSION)
-
     def _identity(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         return opam_roots.identity(
             type(self).__name__,
             kwargs.get("repo", "https://github.com/ocaml/ocaml.git"),
             str(self.version) if self.version else str(self.commit),
             configure_args=kwargs.get("configure_args"),
-            dune_version=type(self)._dune_version(kwargs),
             relocatable=bool(kwargs.get("relocatable")),
             opam_repository=kwargs.get("opam_repository"),
         )
@@ -368,7 +357,8 @@ class OCaml(Runtime):
 
     @classmethod
     def _build_root(cls, ident: Dict[str, Any], root: "opam_roots.Root") -> None:
-        """Build the compiler at the identity's SHA, then dune and ocamlfind."""
+        """Build the compiler at the identity's SHA, then ocamlfind. dune
+        comes from the tools switch, so every runtime builds with the same one."""
         opam = OCaml._find_opam()
         OCaml._run_checked(cls._create_command(ident), env=root.env())
 
@@ -380,23 +370,10 @@ class OCaml(Runtime):
                 "--switch={}".format(opam_roots.SWITCH),
             ], env=root.env())
 
-        # Fatal: falling back to the tools switch's unpinned dune would
-        # silently undo the pin. Use `dune_version:` instead.
-        dune_pkg = "dune.{}".format(ident["dune_version"])
-        try:
-            OCaml._run_checked([
-                opam, "install", dune_pkg, "ocamlfind",
-                "--switch={}".format(opam_roots.SWITCH), "--yes",
-            ], env=root.env())
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(
-                "Failed to install {}/ocamlfind in opam root {}.\n"
-                "Refusing to continue: benchmark binaries would be built with "
-                "whatever dune happens to be on PATH, so runtimes compared "
-                "against each other could be built by different dune versions.\n"
-                "If this compiler needs a different dune, set `dune_version:` "
-                "on the runtime in your config.".format(dune_pkg, root.path)
-            ) from e
+        OCaml._run_checked([
+            opam, "install", "ocamlfind",
+            "--switch={}".format(opam_roots.SWITCH), "--yes",
+        ], env=root.env())
 
     def _ensure_satellite_switch(self, satellite_name: str) -> None:
         """A per-benchmark satellite switch in this runtime's root: an empty
@@ -431,6 +408,12 @@ class OCaml(Runtime):
         self._satellite_switches: Dict[str, str] = {}  # benchmark_name -> switch_name
         self._compiler_identity: Optional[str] = None
         self._root: Optional[opam_roots.Root] = None
+        for k in ("dune_version", "dune_commit"):
+            if k in kwargs:
+                raise ValueError(
+                    "`{}:` on runtime {} is no longer supported: every runtime "
+                    "builds with the tools switch's dune (running.switches)."
+                    .format(k, self.name))
 
         executable = kwargs.get("executable")
         if executable:
@@ -624,11 +607,6 @@ class OCamlMMTk(OCaml):
         )
 
     @classmethod
-    def _dune_version(cls, kwargs: Dict[str, Any]) -> Optional[str]:
-        # Builds use the tools switch's dune; nothing is installed here.
-        return None
-
-    @classmethod
     def _build_root(cls, ident: Dict[str, Any], root: "opam_roots.Root") -> None:
         """Build the MMTk compiler with this root's build/install wrappers set
         to ``setarch -R``: that drops bubblewrap's --unshare-net so cargo can
@@ -653,13 +631,9 @@ class OxCaml(OCaml):
     """OxCaml (Jane Street's OCaml fork): OCaml with a different default repo."""
 
     DEFAULT_REPO = "https://github.com/oxcaml/oxcaml.git"
-    # oxcaml/opam-repository's guard packages only admit its +ox dune builds.
-    DUNE_VERSION = "3.22.2+ox"
-
     def __init__(self, **kwargs):
         if "repo" not in kwargs:
             kwargs["repo"] = OxCaml.DEFAULT_REPO
-        kwargs.setdefault("dune_version", OxCaml.DUNE_VERSION)
         super().__init__(**kwargs)
         self._assert_is_oxcaml()
 
