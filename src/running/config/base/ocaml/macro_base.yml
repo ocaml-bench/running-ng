@@ -1296,8 +1296,7 @@ tags:
   # Measurement facts with no tag to live in:
   #   - frama-c and goblint fork the C preprocessor inside the measured
   #     region, so that child's CPU is outside the parent's counters.
-  #   - coqc_bin.exe execve's itself into rocqworker, and its wrapper shells
-  #     out to ocamlfind twice per invocation.
+  #   - coqc_bin.exe execve's itself into rocqworker.
   # ---------------------------------------------------------------------
 
   weak_refs:

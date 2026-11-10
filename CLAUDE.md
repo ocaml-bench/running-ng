@@ -268,12 +268,14 @@ tag filter is *intersection-only* (can't re-enable a program absent from
 - Disk: ~0.1 GB of repository metadata per root plus the compiler switch
   (~0.7 GB for 5.4.1); first build of a 5.4.1 root ~100 s on 32 cores.
 - **dune is the tools switch's, for every runtime**: `switches.py` pins it
-  (3.24.2) and runtime roots install only `ocamlfind`, so two runtimes compared
+  (3.24.2) and runtime roots hold only the compiler, so two runtimes compared
   in one run, or provisioned months apart, build with the same dune, and it is
   built with stock OCaml so it never has to bootstrap on the compiler under
   test. It reaches builds through `PATH` (the launch scripts put the tools
   switch's `bin` after the runtime switch's), and `tool_versions.dune` in the
-  contract records it. `dune_version:` / `dune_commit:` on a runtime are
+  contract records it. `ocamlfind` reaches builds the same way; macro-benches
+  points it at each runtime with its own `findlib.conf` (`use_prefix_findlib`).
+  `dune_version:` / `dune_commit:` on a runtime are
   refused. History: each root used to install its own pinned dune, which
   broke whenever a compiler outran it: 3.22.1 could not bootstrap on 5.6
   trunk, OxCaml needed oxcaml/opam-repository's `3.22.2+ox`, and OxCaml main
@@ -673,7 +675,7 @@ says so.
 - **`PerfAndOllyAttach` PID discovery.** The benchmark runs behind a
   `python3 -c` wrapper that blocks on a pipe so perf can attach pre-`exec`;
   olly then needs the *right* `.events` file. Wrapper scripts that run OCaml
-  helpers in `$(...)` subshells (coq's `ocamlfind printconf stdlib`) leave decoy
+  helpers in `$(...)` subshells leave decoy
   `.events` files, so discovery prefers the wrapper's own PID and otherwise
   filters on alive + `/proc/<pid>/exe` not in a build-tool blocklist, with a 10 s
   deadline. If olly silently doesn't attach, that deadline or the blocklist is
