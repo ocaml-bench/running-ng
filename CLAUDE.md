@@ -347,7 +347,11 @@ tag filter is *intersection-only* (can't re-enable a program absent from
   vendored; ctypes needs an eta-expansion on OxCaml; olly's 5.3/5.4 counter
   shim names `EV_C_MAJOR_ALLOCATED_WORDS`, which OxCaml (reporting `5.4.0+ox`)
   calls `EV_C_MAJOR_SLICE_ALLOC_WORDS`, so the patch picks a shim on the `+ox`
-  suffix. A patch that no longer applies is fatal; drop it once upstream.
+  suffix; dune-configurator re-exports `result`, whose parameters OxCaml main
+  made `any`, so the patch keeps an `import.upstream.ml` and an
+  `import.oxcaml.ml` and picks one on the `+ox` suffix (the same split as
+  macro-benches' patch 71; dune main still has the re-export). A patch that no
+  longer applies is fatal; drop it once upstream.
 - olly's allocation counters are emitted at minor GCs, so a run with none
   reports zero (OxCaml's almabench at -O3 allocates ~1100 words and never
   collects).
