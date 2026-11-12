@@ -131,7 +131,7 @@ def test_extract_strips_the_top_directory(tmp_path):
 
 def test_every_patch_and_overlay_is_shipped():
     assert sorted(p.name for p in olly.PATCHES.glob("*.patch")) == [
-        "ctypes-oxcaml-eta.patch", "hdr_histogram-vendored-ctypes.patch",
-        "olly-oxcaml-shim.patch"]
+        "ctypes-oxcaml-eta.patch", "dune-configurator-oxcaml-any.patch",
+        "hdr_histogram-vendored-ctypes.patch", "olly-oxcaml-shim.patch"]
     for name in olly.OVERLAY_SOURCES:
         assert (olly.OVERLAYS / name / "dune-project").is_file()
