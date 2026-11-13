@@ -42,6 +42,7 @@ suites:
         # binary: "<tool>-{runtime}"        # optional: defaults to <name>-<runtime>
         # build_env: { FOO: bar }           # optional: extra build-time env
         # always_build: true                # optional: rebuild even if the binary exists
+        # TODO(docs): "even if the binary is up to date": an existing binary is now rebuilt when the runtime or the benchmark repo (commit, uncommitted changes in its directory) changed since its build. Default binary location is now _build_status/<name>-<runtime> at the repo top; a build script must put any other per-runtime file next to RUNNING_OCAML_OUTPUT.
         # ocamlrunparam: "e=25,d=2"         # optional: per-benchmark ring size
         # expected_exit: 142                # optional: exit code a *successful* run returns to indentify potential failures
 

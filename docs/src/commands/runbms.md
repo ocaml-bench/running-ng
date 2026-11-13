@@ -40,6 +40,7 @@ A failed build leaves a `<binary>.build-failed` file recording the compiler's gi
 Without this flag, a later build with the same compiler fails straight away with a message naming that file; delete it to retry.
 With the flag, the build is retried with a warning.
 A file left by a different compiler never blocks a build.
+<!-- TODO(docs): binaries now go to `_build_status/<benchmark>-<runtime>` at the top of the benchmark's git repo (ignored by its own .gitignore), with the `.build-failed` file and a `.build-stamp`: the runtime's opam root or compiler, the repo's commit, and a hash of uncommitted changes in the benchmark's directory. An existing binary is rebuilt when its stamp is missing or differs, with a warning saying what changed. Before building, a repo with scripts/setup-stamp.sh (macro-benches) gets `make setup` when its setup is stale or unfinished. -->
 
 `--resume` (preview ⚠️): resume a previous run under `LOG_DIR/RESUME`. If a `.log.gz` already exists for a group of invocations, they will be skipped. Remember to clean up the partial `*.log` files before resuming.
 

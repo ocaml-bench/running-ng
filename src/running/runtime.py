@@ -492,6 +492,14 @@ class OCaml(Runtime):
             self._compiler_identity = "executable:{}".format(h[:16])
         return self._compiler_identity
 
+    def get_build_identity(self) -> str:
+        """What a benchmark binary built with this runtime depends on: the opam
+        root, whose name hashes its whole identity (configure_args included),
+        else the compiler."""
+        if self._root is not None:
+            return self._root.path.name
+        return self.get_compiler_identity()
+
     def get_benchmark_switch_name(self, benchmark_name: str) -> Optional[str]:
         """Satellite switch name for a benchmark, or None if not created."""
         return self._satellite_switches.get(benchmark_name)

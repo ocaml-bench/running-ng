@@ -129,5 +129,6 @@ For each `configs` entry:
 1. resolve runtime,
 2. build runtime if needed (version/commit/hash modes),
 3. ensure benchmark binary exists for that runtime (or rebuild if `always_build`),
+<!-- TODO(docs): step 3 now also rebuilds when the binary's `.build-stamp` is missing or differs: another runtime root/compiler, another commit of the benchmark repo, or different uncommitted changes in the benchmark's directory. Binaries live in `_build_status/` at the repo top. Before step 3, macro-benches gets `make setup` when its setup is stale. -->
 4. run benchmark with selected modifiers.
 
