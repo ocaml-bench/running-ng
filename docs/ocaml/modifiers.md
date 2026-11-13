@@ -31,6 +31,21 @@ apply to) or `includes:` (the only programs they apply to). That is how one
 pinning policy is routed to the single-threaded benchmarks and another to the
 multi-domain ones.
 
+## Config identity
+
+Every modifier in a config string is part of the config's identity in the contract. Two configs that differ in a modifier get different `config_id`s and show up as separate series on the dashboard. A modifier with a canonical dimension (`s`, `o`, `re`, `plan`, ...) appears under that dimension (`s-32768` as `minor_heap=32768`). Any other appears under its own name, as `name=value` for a `name-value` token or `name=true` for a flag (`jemalloc=true`). A `ModifierSet` counts as one flag.
+
+A modifier that only observes the run sets `measurement_only: true` and stays out of the identity:
+
+```yaml
+perf_grp1:
+  type: PerfAndOllyAttach
+  measurement_only: true
+  val: "task-clock,page-faults,cycles,instructions"
+```
+
+The base configs mark the counter and olly groups, memtrace, the CPU pins, `time_stats`, `olly_gc` and `gc_verbose`. Never mark a modifier that changes what runs, such as an `EnvVar` (`LD_PRELOAD`), an `OCamlRunParam` or a `ProgramArg`.
+
 ## Sizing the runtime-events ring
 
 `olly` reads GC events out of the runtime-events ring buffer. If the ring is too
