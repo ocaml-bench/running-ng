@@ -128,6 +128,6 @@ For each `configs` entry:
 
 1. resolve runtime,
 2. build runtime if needed (version/commit/hash modes),
-3. ensure benchmark binary exists for that runtime (or rebuild if `always_build`),
+3. ensure the benchmark binary for that runtime is up to date: built if missing, rebuilt if `always_build` or if the runtime, the benchmark repository's commit, or the uncommitted changes in the benchmark's directory differ from its `.build-stamp` (for macro-benches, `make setup` runs first when its setup is stale),
 4. run benchmark with selected modifiers.
 

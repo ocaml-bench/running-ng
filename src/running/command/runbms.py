@@ -276,10 +276,10 @@ def get_memtrace_filename(bm: Benchmark, hfac: Optional[float], size: Optional[i
 def get_memtrace_flamegraph_exe(bm: Benchmark, runtime: Runtime) -> Optional[Path]:
     """The memtrace_flamegraph tool built alongside this benchmark for this
     runtime, or None if the benchmark's build script does not produce one."""
-    benchmark_dir = getattr(bm, "benchmark_dir", None)
-    if benchmark_dir is None:
+    resolve = getattr(bm, "_resolve_output_binary", None)
+    if resolve is None:
         return None
-    exe = benchmark_dir / "memtrace_flamegraph-{}".format(runtime.name)
+    exe = resolve(runtime).parent / "memtrace_flamegraph-{}".format(runtime.name)
     return exe if exe.exists() else None
 
 
@@ -745,6 +745,35 @@ def rsync(log_dir):
         system("rsync -ae ssh {}/ {}:{}".format(log_dir, remote_host, log_dir))
 
 
+#: A benchmark tree with this script needs its setup (vendoring) done before
+#: building; `--check` fails when it is stale or unfinished (macro-benches).
+SETUP_CHECK = Path("scripts") / "setup-stamp.sh"
+
+
+def ensure_setup(bms) -> None:
+    """Run `make setup` in each benchmark tree whose setup check fails, before
+    any build, so binaries are never built against a stale vendored tree."""
+    from running import benchmark as b
+    if b._is_dry_run():
+        return
+    tops = {b.repo_top(bm.benchmark_dir) for bm in bms if hasattr(bm, "benchmark_dir")}
+    for top in sorted(t for t in tops if t is not None and (t / SETUP_CHECK).is_file()):
+        if subprocess.run(["bash", str(SETUP_CHECK), "--check"], cwd=top).returncode == 0:
+            continue
+        logging.warning("%s: setup is stale or unfinished; running make setup.", top)
+        env = dict(os.environ, SKIP_TEST_BUILD="1")
+        if b._build_log_dir is None:
+            p = subprocess.run(["make", "setup"], cwd=top, env=env)
+        else:
+            b._build_log_dir.mkdir(parents=True, exist_ok=True)
+            log = b._build_log_dir / "setup-{}.log".format(top.name)
+            with log.open("wb") as fh:
+                p = subprocess.run(["make", "setup"], cwd=top, env=env,
+                                   stdout=fh, stderr=subprocess.STDOUT)
+        if p.returncode != 0:
+            raise RuntimeError("make setup failed in {} (exit {})".format(top, p.returncode))
+
+
 def prebuild(benchmarks, suites, configs: List[str],
              runtime_by_config: Dict[str, Runtime],
              jobs: int = 1) -> Dict[Tuple[str, str, str], str]:
@@ -757,6 +786,7 @@ def prebuild(benchmarks, suites, configs: List[str],
             for c in configs:
                 runtime = runtime_by_config[c]
                 pairs.setdefault((suite_name, bm.name, runtime.name), (bm, runtime))
+    ensure_setup(bm for bm, _ in pairs.values())
     build_failed: Dict[Tuple[str, str, str], str] = {}
 
     def build(key):

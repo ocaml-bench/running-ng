@@ -32,6 +32,14 @@ Before the first run, `runbms` builds every benchmark for every runtime.
 If any build fails, it lists the failures with their reasons and exits with status 1 without running anything, so a broken build shows up before a long run starts.
 `buildbms` also exits with status 1 when any build fails.
 
+Built binaries go to `_build_status/` at the top of the benchmark's git repository (or in the benchmark's directory outside git), named `<benchmark>-<runtime>`.
+The directory ignores itself, so build outputs never show up in `git status`.
+Next to each binary, a `.build-stamp` file records what it was built from: the runtime, the repository's commit, and any uncommitted changes in the benchmark's directory.
+A binary is reused only when that still matches; otherwise it is rebuilt, with a warning saying what changed.
+Changes elsewhere in the repository count once they are committed.
+Outside git, the stamp records a hash of the files in the benchmark's directory instead, so changing any of them rebuilds the binary.
+A benchmark repository with `scripts/setup-stamp.sh` (e.g., macro-benches) is set up first: when its setup is stale or unfinished, `make setup` runs before any build.
+
 `--skip-build-failures`: run the benchmarks that built instead of stopping.
 A benchmark that failed to build is not run; a warning says so.
 

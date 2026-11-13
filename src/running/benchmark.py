@@ -1,5 +1,6 @@
 import errno
 import glob
+import hashlib
 import json
 import logging
 import re
@@ -10,6 +11,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from time import sleep
 from typing import Any, List, Optional, Tuple, Union, Dict
@@ -742,6 +744,124 @@ class OCamlBenchmark(Benchmark):
         return cmd
 
 
+_git_state: Dict[Tuple[str, ...], Any] = {}
+_git_state_lock = threading.Lock()
+
+
+def _git(cwd: Path, *args: str) -> bytes:
+    return subprocess.run(["git", "-C", str(cwd), *args], check=True,
+                          stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout
+
+
+def _cached(key: Tuple[str, ...], compute):
+    """Read once per process, so every build in a run sees the same state."""
+    with _git_state_lock:
+        if key not in _git_state:
+            _git_state[key] = compute()
+        return _git_state[key]
+
+
+def repo_top(path: Path) -> Optional[Path]:
+    """The top level of the git repository holding path, or None."""
+    def compute():
+        try:
+            return Path(_git(path, "rev-parse", "--show-toplevel").decode().strip())
+        except (OSError, subprocess.CalledProcessError):
+            return None
+    return _cached(("top", str(path)), compute)
+
+
+def source_state(paths: List[Path]) -> Dict[str, str]:
+    """The git repository holding paths[0]: its top level and HEAD commit, and
+    a hash of the uncommitted changes under paths (tracked and untracked, ""
+    when clean). Empty outside a git repository."""
+    top = repo_top(paths[0])
+    if top is None:
+        return {}
+    return _cached(("state", str(top)) + tuple(str(p) for p in paths),
+                   lambda: _read_source_state(top, paths))
+
+
+def _read_source_state(top: Path, paths: List[Path]) -> Dict[str, str]:
+    spec = ["--"] + [str(p) for p in paths]
+    try:
+        commit = _git(top, "rev-parse", "HEAD").decode().strip()
+        diff = _git(top, "diff", "HEAD", "--binary", "--no-ext-diff", *spec)
+        untracked = sorted(p for p in _git(
+            top, "ls-files", "-z", "--others", "--exclude-standard", *spec).split(b"\0") if p)
+    except (OSError, subprocess.CalledProcessError):
+        return {}
+    dirty = ""
+    if diff or untracked:
+        h = hashlib.sha256(diff)
+        for p in untracked:
+            h.update(p + b"\0")
+            f = top / os.fsdecode(p)
+            if f.is_file():
+                h.update(hashlib.sha256(f.read_bytes()).digest())
+        dirty = h.hexdigest()
+    return {"repo": str(top), "commit": commit, "dirty": dirty}
+
+
+def _make_output_dir(d: Path) -> None:
+    d.mkdir(parents=True, exist_ok=True)
+    if d.name == "_build_status":
+        ignore = d / ".gitignore"
+        if not ignore.exists():
+            ignore.write_text("*\n")
+
+
+def _files_under(root: Path) -> List[Path]:
+    if root.is_file():
+        return [root]
+    found = []
+    for d, dirs, files in os.walk(root):
+        dirs[:] = sorted(x for x in dirs if not x.startswith("_build"))
+        found.extend(Path(d) / f for f in sorted(files))
+    return found
+
+
+def content_state(paths: List[Path]) -> Dict[str, str]:
+    """For a benchmark outside git: a hash of every file under paths, skipping
+    build directories (`_build*`), whose contents change with every build."""
+    def compute():
+        h = hashlib.sha256()
+        for root in paths:
+            for f in _files_under(root):
+                if f.is_file():
+                    rel = f.name if f == root else str(f.relative_to(root))
+                    h.update(os.fsencode(rel) + b"\0")
+                    h.update(hashlib.sha256(f.read_bytes()).digest())
+        return {"content": h.hexdigest()}
+    return _cached(("content",) + tuple(str(p) for p in paths), compute)
+
+
+def _stamp_path(out_binary: Path) -> Path:
+    return Path(str(out_binary) + ".build-stamp")
+
+
+def _read_stamp(out_binary: Path) -> Optional[Dict[str, str]]:
+    try:
+        return json.loads(_stamp_path(out_binary).read_text())
+    except (OSError, ValueError):
+        return None
+
+
+def _stamp_change(old: Optional[Dict[str, str]], new: Dict[str, str]) -> str:
+    if old is None:
+        return "no build stamp"
+    changed = []
+    if old.get("runtime") != new.get("runtime"):
+        changed.append("runtime {} -> {}".format(old.get("runtime"), new.get("runtime")))
+    if old.get("commit") != new.get("commit"):
+        changed.append("commit {} -> {}".format(old.get("commit"), new.get("commit")))
+    if old.get("dirty") != new.get("dirty"):
+        changed.append("uncommitted changes differ")
+    if old.get("content") != new.get("content"):
+        changed.append("files changed")
+    return ", ".join(changed) or "build stamp differs"
+
+
 class OCamlBuiltBinaryBenchmark(Benchmark):
     def __init__(
         self,
@@ -805,22 +925,43 @@ class OCamlBuiltBinaryBenchmark(Benchmark):
                 runtime=runtime.name
             )
         else:
-            raw_binary = "{}-{}".format(self.benchmark_name, runtime.name)
+            return (self._status_dir() / "{}-{}".format(
+                self.benchmark_name, runtime.name)).resolve()
         declared = Path(raw_binary)
         if declared.is_absolute():
             return declared.resolve()
         return (self.benchmark_dir / declared).resolve()
 
+    def _status_dir(self) -> Path:
+        """Where built binaries, their stamps and failure sentinels go: the
+        top of the benchmark's git repository, else its directory."""
+        return (repo_top(self.benchmark_dir) or self.benchmark_dir) / "_build_status"
+
+    def build_stamp(self, runtime: OCaml) -> Dict[str, str]:
+        """What the binary is built from: the runtime and, in a git repository,
+        its commit and the uncommitted changes in the benchmark's directory and
+        build script; outside git, a hash of those files."""
+        paths = [self.benchmark_dir.resolve()]
+        script = self._resolve_build_script()
+        if paths[0] not in script.parents:
+            paths.append(script)
+        stamp = {"runtime": runtime.get_build_identity()}
+        stamp.update(source_state(paths) or content_state(paths))
+        return stamp
+
     def _run_build(self, runtime: OCaml, out_binary: Path):
         if _is_dry_run():
             return
+        stamp = self.build_stamp(runtime)
         if out_binary.exists() and not self.always_build:
-            logging.warning(
-                "OCaml binary %s already exists; skipping build. Set `always_build: true` to rebuild.",
-                out_binary
-            )
-            return
-        out_binary.parent.mkdir(parents=True, exist_ok=True)
+            old = _read_stamp(out_binary)
+            if old == stamp:
+                logging.info("OCaml binary %s is up to date; skipping build.", out_binary)
+                return
+            logging.warning("Rebuilding %s: %s.", out_binary, _stamp_change(old, stamp))
+        out_binary.unlink(missing_ok=True)
+        _stamp_path(out_binary).unlink(missing_ok=True)
+        _make_output_dir(out_binary.parent)
 
         # isolated_switch: opam installs go to a per-benchmark satellite switch.
         if self.isolated_switch:
@@ -867,6 +1008,7 @@ class OCamlBuiltBinaryBenchmark(Benchmark):
                 raise subprocess.CalledProcessError(p.returncode, cmd)
 
         if out_binary.exists():
+            _stamp_path(out_binary).write_text(json.dumps(stamp, sort_keys=True) + "\n")
             return
 
         raise RuntimeError(
@@ -920,7 +1062,7 @@ class OCamlBuiltBinaryBenchmark(Benchmark):
         try:
             self._run_build(runtime, out_binary)
         except Exception:
-            sentinel.parent.mkdir(parents=True, exist_ok=True)
+            _make_output_dir(sentinel.parent)
             sentinel.write_text(runtime.get_compiler_identity() + "\n")
             raise
         sentinel.unlink(missing_ok=True)

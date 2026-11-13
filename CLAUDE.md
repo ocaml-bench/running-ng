@@ -366,7 +366,7 @@ build script with `cwd = benchmark_dir`, prefixed by
 | Variable | Value |
 |---|---|
 | `RUNNING_OCAML_BENCH_DIR` | the benchmark's `path:` |
-| `RUNNING_OCAML_OUTPUT` | `binary:` (with `{benchmark}`/`{runtime}` expanded) else `<benchmark>-<runtime>` under `path:` |
+| `RUNNING_OCAML_OUTPUT` | `binary:` (with `{benchmark}`/`{runtime}` expanded, relative to `path:`) else `_build_status/<benchmark>-<runtime>` at the top of `path:`'s git repo (else under `path:`) |
 | `RUNNING_OCAML_RUNTIME_NAME` | the runtime's config-file name |
 | `RUNNING_OCAML_SWITCH` | switch name (`runtime`), when not in `executable:` mode |
 | `RUNNING_OCAML_SWITCH_PREFIX` | that switch's prefix, likewise |
@@ -374,8 +374,26 @@ build script with `cwd = benchmark_dir`, prefixed by
 
 Post-conditions and caching:
 - The script **must** create `RUNNING_OCAML_OUTPUT`, or the build is an error.
-- An existing output binary means **skip the build** (warning:
-  `already exists; skipping build`) unless `always_build: true`.
+- `_build_status/` holds the binaries, their stamps and `.build-failed`
+  sentinels, and a `.gitignore` of `*` that running-ng writes, so no benchmark
+  repo needs an entry and build outputs never show as changes. Build scripts put
+  anything else they emit per runtime next to `RUNNING_OCAML_OUTPUT`.
+- A successful build writes `<output>.build-stamp` (JSON): the runtime's
+  `get_build_identity()` (opam root name, else compiler identity) and, when the
+  benchmark dir is in a git repo, its top level, `HEAD` and a hash of the
+  uncommitted changes under the benchmark dir and its build script (`git diff
+  HEAD` + untracked non-ignored files; `""` when clean); outside git, `content`:
+  a hash of every file under the benchmark dir and build script, skipping
+  `_build*` dirs. Both are read once per process (`source_state`,
+  `content_state`). An existing binary is reused only when its stamp
+  equals the current one; otherwise it is deleted and rebuilt (warning
+  `Rebuilding ...: <what changed>`), as is a binary with no stamp.
+  `always_build: true` always rebuilds. Uncommitted edits outside the benchmark
+  dir (shared scripts) count only once committed.
+- Before building, `prebuild` runs `ensure_setup`: in each benchmark repo with
+  `scripts/setup-stamp.sh` (macro-benches) it runs `--check`, and on failure
+  `SKIP_TEST_BUILD=1 make setup` (log `setup-<repo>.log` in the build log dir);
+  a failed setup stops the run.
 - A failed build writes `<output>.build-failed`; **later runs with the same
   compiler refuse to retry** until the sentinel is deleted.
 - `runbms` builds every (benchmark, runtime) pair before the first run and
