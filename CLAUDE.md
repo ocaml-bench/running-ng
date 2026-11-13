@@ -435,7 +435,11 @@ Post-conditions and caching:
 `olly_<same base>.json` / `perf_<same base>.json`, `.gz` when
 `compress_logs` is true (its default when unset is **true**; both OCaml bases
 set it to `false`). Also written into the run dir: `runbms.yml` (merged config,
-post-`RUNNING_TAG`) and `runbms_args.yml`.
+post-`RUNNING_TAG`), `runbms_args.yml`, and `builds.json` (`record_build`: per
+(suite, benchmark, config string) that ran, its binary's build stamp, with the
+repo as its origin URL, normalised and without credentials). The native emitter
+turns it into the manifest's `builds` (config strings mapped to `config_id`,
+only benchmarks and configs with measurements).
 
 memtrace adds `memtrace_<same base>.<invocation>.trace` (raw) and
 `memtrace_<same base>.<invocation>.json` (folded-stack summary). These are

@@ -836,6 +836,19 @@ def content_state(paths: List[Path]) -> Dict[str, str]:
     return _cached(("content",) + tuple(str(p) for p in paths), compute)
 
 
+def source_url(repo: str) -> Optional[str]:
+    """The repository's origin as https://host/path, without credentials or
+    `.git`, so a published manifest names it the same from every machine."""
+    def compute():
+        try:
+            url = _git(Path(repo), "remote", "get-url", "origin").decode().strip()
+        except (OSError, subprocess.CalledProcessError):
+            return None
+        m = re.match(r"^(?:[\w.+-]+://)?(?:[^@/]+@)?([^/:]+)(?::\d+(?=/))?[:/](.+?)(?:\.git)?/?$", url)
+        return "https://{}/{}".format(m.group(1), m.group(2)) if m else None
+    return _cached(("origin", repo), compute)
+
+
 def _stamp_path(out_binary: Path) -> Path:
     return Path(str(out_binary) + ".build-stamp")
 
@@ -931,6 +944,10 @@ class OCamlBuiltBinaryBenchmark(Benchmark):
         if declared.is_absolute():
             return declared.resolve()
         return (self.benchmark_dir / declared).resolve()
+
+    def read_build_stamp(self, runtime: OCaml) -> Optional[Dict[str, str]]:
+        """The stamp of the binary this benchmark runs with on runtime."""
+        return _read_stamp(self._resolve_output_binary(runtime))
 
     def _status_dir(self) -> Path:
         """Where built binaries, their stamps and failure sentinels go: the

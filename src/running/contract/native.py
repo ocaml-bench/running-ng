@@ -56,6 +56,10 @@ def _olly_version():
         return None
 
 
+#: Written beside contract/ by runbms: what each (benchmark, config) ran with.
+BUILDS = "builds.json"
+
+
 class NativeEmitter:
     """Accumulates contract artifacts across a run; finalize() writes the manifest."""
 
@@ -227,6 +231,21 @@ class NativeEmitter:
                 out.append(c)
         return out
 
+    def _builds(self):
+        """builds.json's rows for the benchmarks and configs this manifest lists."""
+        p = self.dir.parent / BUILDS
+        if not p.exists():
+            return []
+        out = []
+        for row in json.loads(p.read_text())["builds"]:
+            if (row["benchmark"], row["suite"]) not in self.benchmarks:
+                continue
+            cid = self._descriptor(row["config"], register=False)["config_id"]
+            if cid not in self.configs:
+                continue
+            out.append(emit.build(row, cid))
+        return out
+
     def finalize(self):
         for cid in self._resumed_cids - set(self.configs):
             if cid in self._config_strs:
@@ -249,6 +268,7 @@ class NativeEmitter:
                             list(self.configs.values()),
                             tool_versions=tv, comparisons=self._map_comparisons(),
                             benchmarks=list(self.benchmarks.values()),
+                            builds=self._builds(),
                             produced_by="running-ng (native)")
         emit.write_json(str(self.dir / "manifest.json"), man)
         return len(self.configs), len(self.benchmarks)

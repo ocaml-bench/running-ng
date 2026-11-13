@@ -83,3 +83,56 @@ def test_a_cut_off_cell_is_cleared_before_it_reruns(tmp_path, monkeypatch):
         (tmp_path / name).write_text("partial")
     runbms.discard_partial_cell(tmp_path, _Bm("x"), None, None, CFG_A)
     assert sorted(p.name for p in tmp_path.iterdir()) == ["y.0.0.a.s.log"]
+
+
+class _StampedBm(_Bm):
+    def __init__(self, name, stamp):
+        super().__init__(name)
+        self.stamp = stamp
+
+    def read_build_stamp(self, runtime):
+        return self.stamp
+
+
+class _Rt:
+    name = "ocaml-a"
+
+
+def test_manifest_builds_come_from_builds_json(tmp_path, monkeypatch):
+    monkeypatch.setattr("running.benchmark.source_url",
+                        lambda repo: "https://github.com/o/" + repo.rsplit("/", 1)[-1])
+    run = tmp_path / "run"
+    contract = run / "contract"
+    run.mkdir()
+    git = {"runtime": "ocaml-root", "repo": "/r/macro-benches", "commit": "c" * 40, "dirty": ""}
+    local = {"runtime": "ocaml-root", "content": "h"}
+    runbms.record_build(run, _StampedBm("x", git), _Rt(), CFG_A)
+    runbms.record_build(run, _StampedBm("x", git), _Rt(), CFG_A)       # once per cell
+    runbms.record_build(run, _StampedBm("y", dict(git, dirty="d")), _Rt(), CFG_B)
+    runbms.record_build(run, _StampedBm("z", local), _Rt(), CFG_A)
+    runbms.record_build(run, _StampedBm("never", git), _Rt(), CFG_A)  # no measurement
+    runbms.record_build(run, _Bm("nostamp"), _Rt(), CFG_A)
+    assert len(json.loads((run / "builds.json").read_text())["builds"]) == 4
+    e = _emitter(contract)
+    for name, cfg in (("x", CFG_A), ("y", CFG_B), ("z", CFG_A)):
+        e.record(_Bm(name), cfg, OLLY)
+    e.finalize()
+    man = json.loads((contract / "manifest.json").read_text())
+    builds = {b["benchmark"]["name"]: b for b in man["builds"]}
+    assert set(builds) == {"x", "y", "z"}
+    assert builds["x"] == {
+        "benchmark": {"name": "x", "suite": "s"},
+        "config": {"config_id": e._descriptor(CFG_A)["config_id"]},
+        "runtime_build": "ocaml-root",
+        "source": "https://github.com/o/macro-benches", "commit": "c" * 40}
+    assert builds["y"]["dirty"] == "d"
+    assert builds["z"] == {"benchmark": {"name": "z", "suite": "s"},
+                           "config": builds["x"]["config"],
+                           "runtime_build": "ocaml-root", "content": "h"}
+
+
+def test_manifest_without_builds_json_has_no_builds(tmp_path):
+    e = _emitter(tmp_path / "contract")
+    e.record(_Bm("x"), CFG_A, OLLY)
+    e.finalize()
+    assert "builds" not in json.loads((tmp_path / "contract" / "manifest.json").read_text())

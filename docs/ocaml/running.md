@@ -66,6 +66,7 @@ Each invocation of the launch script creates
 ```text
 runbms.yml                 the fully merged config, after any RUNNING_TAG filter
 runbms_args.yml            the CLI arguments used
+builds.json                what each benchmark ran with: its binary's runtime, repo commit and changes
 <bm>.<hfac>.<size>.<config>.<suite>.log       per-cell log
 olly_<same base>.json                          per-cell olly NDJSON sidecar
 perf_<same base>.json                          per-cell counter NDJSON sidecar

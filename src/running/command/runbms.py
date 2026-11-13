@@ -6,6 +6,7 @@ from running.benchmark import Benchmark, SubprocessrExit
 from running.config import Configuration
 from pathlib import Path
 from running.benchmark import set_build_log_dir, set_retry_failed_builds
+from running.contract.native import BUILDS
 from running.util import parse_config_str, system, get_logged_in_users, config_index_to_chr, config_str_encode
 import socket
 from datetime import datetime
@@ -362,6 +363,31 @@ def write_run_failures(log_dir: Path, rows: List[Dict[str, Any]]) -> None:
     tmp.replace(log_dir / RUN_FAILURES)
 
 
+def record_build(log_dir: Path, bm: Benchmark, runtime: Runtime, config: str) -> None:
+    """Note in builds.json what (bm, config) ran with: its binary's build stamp."""
+    from running.benchmark import source_url
+    read = getattr(bm, "read_build_stamp", None)
+    stamp = read(runtime) if read is not None else None
+    if stamp is None:
+        return
+    p = log_dir / BUILDS
+    rows = json.loads(p.read_text())["builds"] if p.exists() else []
+    if any(r["suite"] == bm.suite_name and r["benchmark"] == bm.name and r["config"] == config
+           for r in rows):
+        return
+    row = {"suite": bm.suite_name, "benchmark": bm.name, "config": config,
+           "runtime_build": stamp["runtime"]}
+    if "commit" in stamp:
+        row["source"] = source_url(stamp["repo"])
+        row["commit"] = stamp["commit"]
+        row["dirty"] = stamp.get("dirty") or None
+    else:
+        row["content"] = stamp.get("content")
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps({"builds": rows + [row]}, indent=2) + "\n")
+    tmp.replace(p)
+
+
 def record_run_failure(log_dir: Path, row: Dict[str, Any]) -> None:
     write_run_failures(log_dir, read_run_failures(log_dir) + [row])
 
@@ -638,6 +664,7 @@ def run_one_benchmark(
                             memtrace_path=memtrace_path,
                         )
                     ever_ran[j] = True
+                    record_build(log_dir, bm, runtime, c)
                     if memtrace_path.exists():
                         write_memtrace_json_sidecar(memtrace_path, bm, runtime)
                     elif bm.attach_modifiers(mods).memtrace_attach is not None:
@@ -1042,10 +1069,11 @@ def run(args):
         if _native_emitter is not None:
             _native_emitter.set_config_strings(configs)
         if not resume and not is_dry_run():
-            try:
-                (log_dir / RUN_FAILURES).unlink()
-            except FileNotFoundError:
-                pass
+            for stale in (RUN_FAILURES, BUILDS):
+                try:
+                    (log_dir / stale).unlink()
+                except FileNotFoundError:
+                    pass
         if resume and not is_dry_run() and read_complete_cells(log_dir) is None:
             # Seeded the old way, from the logs present: a cell cut off mid-run
             # there cannot be told apart, and is not rerun.
