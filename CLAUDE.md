@@ -565,6 +565,18 @@ says so.
   `combine()` `TypeError`. Change them through `overrides:`. A top-level
   `benchmarks:` dict *merges/extends* the base's set rather than replacing it,
   so narrowing the suite must also go through `overrides:`.
+- **Every modifier in a config string is part of the contract `config_id`
+  unless its definition says `measurement_only: true`** (`NativeEmitter._descriptor`).
+  A token in `vocab.DIMENSION_OF_MODIFIER` keeps its canonical dimension
+  (`s-32768` → `minor_heap`); any other becomes a dimension under its own name,
+  `name=value` for `name-value` tokens and `name=true` for flags (a `ModifierSet`
+  is one flag). The perf/olly/memtrace attach groups, the `pin_*` CpuPins,
+  `time_stats`, `olly_gc` and `gc_verbose*` are marked. Leave the mark off
+  anything that changes the measured program: before this rule, unregistered
+  modifiers were dropped, so allocator `LD_PRELOAD`s, `oxgc` and `blas1` merged
+  their configs (or shared ids across runs). The emitter warns about an
+  attach/pin modifier without the mark. Replaying 22 older runs reproduced every
+  stored id except those cases, and the 2026-08-19 owl sweep's 100 ids exactly.
 - **No config needs a `_freebsd` variant.** Each backend names the
   `PerfAndOllyAttach` key it reads (`VAL_KEY`: `val_freebsd` for
   `freebsd-pmc`, `val` otherwise), and the harness takes that list once the
@@ -747,8 +759,8 @@ says so.
      be re-applied on the build command itself. The root is MMTk's alone, so the
      setting stays (it used to be swapped in and out of the user's root).
   `MMTK_PLAN`/`MMTK_THREADS` are run-time `EnvVar` modifiers (`plan-…`,
-  `threads-…` in `macro_base.yml`); prefer those name-value forms over the older
-  flag modifiers, which the `config_id` drops.
+  `threads-…` in `macro_base.yml`), mapped to the `gc_plan` / `gc_threads`
+  dimensions.
 - **Relocatable compilers / satellite switches** exist
   (`OCamlMacroBenchmarkSuite`, dra27 relocatable overlay added to every
   `_ensure_switch`) but the *active* macro path is the `~/macro-benches`

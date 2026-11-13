@@ -56,6 +56,10 @@ def _olly_version():
         return None
 
 
+#: Modifier types that normally only observe a run; one without `measurement_only`
+#: is probably a mistake.
+OBSERVER_TYPES = frozenset(("PerfAndOllyAttach", "MemtraceAttach", "CpuPin", "Companion"))
+
 #: Written beside contract/ by runbms: what each (benchmark, config) ran with.
 BUILDS = "builds.json"
 
@@ -63,13 +67,20 @@ BUILDS = "builds.json"
 class NativeEmitter:
     """Accumulates contract artifacts across a run; finalize() writes the manifest."""
 
-    def __init__(self, contract_dir, run_id, runtimes, comparisons=None, resume=False):
-        # `runtimes` is the raw dict captured before Configuration.resolve_class()
-        # turns the values into Runtime objects.
+    def __init__(self, contract_dir, run_id, runtimes, comparisons=None, resume=False,
+                 modifiers=None):
+        # `runtimes` and `modifiers` are the raw dicts captured before
+        # Configuration.resolve_class() turns the values into objects.
         self.dir = Path(contract_dir)
         self.run_id = run_id
         self.runtimes = runtimes or {}
+        self.modifiers = modifiers or {}
         self.comparisons = comparisons or []
+        for name, spec in self.modifiers.items():
+            if ((spec or {}).get("type") in OBSERVER_TYPES
+                    and not spec.get("measurement_only")):
+                logging.warning("modifier %s (%s) lacks measurement_only: true, so "
+                                "it splits configs in the contract", name, spec["type"])
         self.configs = {}         # config_id -> descriptor
         self.benchmarks = {}      # (name, suite) -> ref
         self._inv = {}            # (bench, config_id) -> next invocation index
@@ -147,20 +158,26 @@ class NativeEmitter:
         for tok in config_str.split("|")[1:]:
             parts = tok.split("-")
             name = parts[0]
-            entry = vocab.DIMENSION_OF_MODIFIER.get(name)
-            if not entry:
-                continue
-            if "value" in entry:            # flag modifier, e.g. mmtk_bactrian
-                v = entry["value"]
-            elif len(parts) >= 2:           # name-value modifier, e.g. s-32768
-                v = parts[1]
+            value = None
+            if len(parts) >= 2:
+                value = parts[1]
                 try:
-                    v = int(v)
+                    value = int(value)
                 except ValueError:
                     pass
-            else:
+            entry = vocab.DIMENSION_OF_MODIFIER.get(name)
+            if entry:
+                if "value" in entry:        # flag modifier, e.g. mmtk_bactrian
+                    value = entry["value"]
+                elif value is None:
+                    continue
+                dims.setdefault(entry["dimension"], value)
+            elif (self.modifiers.get(name) or {}).get("measurement_only"):
                 continue
-            dims.setdefault(entry["dimension"], v)
+            else:
+                # Any other modifier changes the measured program, so it splits
+                # configs under its own name.
+                dims.setdefault(name, True if value is None else value)
         d = emit.config_descriptor(kind, version, commit, options, dims,
                                    runtime_name=runtime_name,
                                    modifiers=config_str.split("|")[1:],
