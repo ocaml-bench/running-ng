@@ -137,7 +137,7 @@ def measurement(run_id, benchmark, suite, config_id_, invocation, metrics,
 
 
 def manifest(run_id, created_at, machine, configs, tool_versions=None,
-             comparisons=None, benchmarks=None, produced_by=None):
+             comparisons=None, benchmarks=None, builds=None, produced_by=None):
     m = {
         "schema_version": vocab.SCHEMA_VERSION,
         "run_id": run_id,
@@ -151,9 +151,22 @@ def manifest(run_id, created_at, machine, configs, tool_versions=None,
         m["comparisons"] = comparisons
     if benchmarks:
         m["benchmarks"] = benchmarks
+    if builds:
+        m["builds"] = builds
     if produced_by:
         m["_produced_by"] = produced_by
     return m
+
+
+def build(row, config_id):
+    """A builds.json row as a contract build record."""
+    b = {"benchmark": {"name": row["benchmark"], "suite": row["suite"]},
+         "config": {"config_id": config_id},
+         "runtime_build": row["runtime_build"]}
+    for k in ("source", "commit", "dirty", "content"):
+        if row.get(k):
+            b[k] = row[k]
+    return b
 
 
 def append_ndjson(path, obj):
