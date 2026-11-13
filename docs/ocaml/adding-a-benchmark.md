@@ -20,6 +20,8 @@ packages on `PATH`, and `dune` from running-ng's own separate tools switch) and 
 | `RUNNING_OCAML_RUNTIME_NAME` | runtime identifier, e.g. `ocaml-5.4.1` | `runtime` |
 | `RUNNING_OCAML_SWITCH` | opam switch name, when there is one | unset |
 
+running-ng sets `RUNNING_OCAML_OUTPUT` to `_build_status/<name>-<runtime>` at the top of the benchmark's git repository. Anything else your script produces per runtime (a helper binary, a wrapper) should go next to it rather than in the benchmark directory, or running-ng counts it as an uncommitted change and rebuilds the benchmark on every run.
+
 See the examples inside [**micro-benches**](https://github.com/ocaml-bench/micro-benches) and [**macro-benches**](https://github.com/ocaml-bench/macro-benches) on how to 
 write your own `<name>.build.sh` file.
 
@@ -39,10 +41,9 @@ suites:
         path: "${RUNNING_MACRO_BENCH_DIR}/benchmarks/<tool>"
         build_script: "<tool>.build.sh"    # optional: defaults to <name>.build.sh
         args: "..."                         # optional: run-time arguments
-        # binary: "<tool>-{runtime}"        # optional: defaults to <name>-<runtime>
+        # binary: "<tool>-{runtime}"        # optional: defaults to _build_status/<name>-<runtime> at the repo top
         # build_env: { FOO: bar }           # optional: extra build-time env
-        # always_build: true                # optional: rebuild even if the binary exists
-        # TODO(docs): "even if the binary is up to date": an existing binary is now rebuilt when the runtime or the benchmark repo (commit, uncommitted changes in its directory) changed since its build. Default binary location is now _build_status/<name>-<runtime> at the repo top; a build script must put any other per-runtime file next to RUNNING_OCAML_OUTPUT.
+        # always_build: true                # optional: rebuild even if the binary is up to date
         # ocamlrunparam: "e=25,d=2"         # optional: per-benchmark ring size
         # expected_exit: 142                # optional: exit code a *successful* run returns to indentify potential failures
 

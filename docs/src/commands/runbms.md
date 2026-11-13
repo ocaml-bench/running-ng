@@ -32,6 +32,13 @@ Before the first run, `runbms` builds every benchmark for every runtime.
 If any build fails, it lists the failures with their reasons and exits with status 1 without running anything, so a broken build shows up before a long run starts.
 `buildbms` also exits with status 1 when any build fails.
 
+Built binaries go to `_build_status/` at the top of the benchmark's git repository (or in the benchmark's directory outside git), named `<benchmark>-<runtime>`.
+The directory ignores itself, so build outputs never show up in `git status`.
+Next to each binary, a `.build-stamp` file records what it was built from: the runtime, the repository's commit, and any uncommitted changes in the benchmark's directory.
+A binary is reused only when that still matches; otherwise it is rebuilt, with a warning saying what changed.
+Changes elsewhere in the repository count once they are committed.
+A benchmark repository with `scripts/setup-stamp.sh` (e.g., macro-benches) is set up first: when its setup is stale or unfinished, `make setup` runs before any build.
+
 `--skip-build-failures`: run the benchmarks that built instead of stopping.
 A benchmark that failed to build is not run; a warning says so.
 
@@ -40,7 +47,6 @@ A failed build leaves a `<binary>.build-failed` file recording the compiler's gi
 Without this flag, a later build with the same compiler fails straight away with a message naming that file; delete it to retry.
 With the flag, the build is retried with a warning.
 A file left by a different compiler never blocks a build.
-<!-- TODO(docs): binaries now go to `_build_status/<benchmark>-<runtime>` at the top of the benchmark's git repo (ignored by its own .gitignore), with the `.build-failed` file and a `.build-stamp`: the runtime's opam root or compiler, the repo's commit, and a hash of uncommitted changes in the benchmark's directory. An existing binary is rebuilt when its stamp is missing or differs, with a warning saying what changed. Before building, a repo with scripts/setup-stamp.sh (macro-benches) gets `make setup` when its setup is stale or unfinished. -->
 
 `--resume` (preview ⚠️): resume a previous run under `LOG_DIR/RESUME`. If a `.log.gz` already exists for a group of invocations, they will be skipped. Remember to clean up the partial `*.log` files before resuming.
 
