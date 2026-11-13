@@ -231,15 +231,25 @@ def _git(repo, *args):
                     *args], check=True, capture_output=True)
 
 
-def test_build_stamp_outside_git_rebuilds_only_for_another_runtime(tmp_path):
-    build = _counting_bench(tmp_path, tmp_path / "b")
+def test_build_stamp_outside_git_follows_runtime_and_files(tmp_path):
+    bench = tmp_path / "b"
+    build = _counting_bench(tmp_path, bench)
     assert build() == 1
     assert build() == 1
-    stamp = json.loads((tmp_path / "b" / "_build_status" / "b-rt.build-stamp").read_text())
-    assert set(stamp) == {"runtime"}
+    stamp_file = bench / "_build_status" / "b-rt.build-stamp"
+    stamp = json.loads(stamp_file.read_text())
+    assert set(stamp) == {"runtime", "content"}
     stamp["runtime"] = "another"
-    (tmp_path / "b" / "_build_status" / "b-rt.build-stamp").write_text(json.dumps(stamp))
-    assert build() == 2
+    stamp_file.write_text(json.dumps(stamp))
+    assert build() == 2          # another runtime
+    (bench / "_build").mkdir()
+    (bench / "_build" / "x.o").write_text("x")
+    assert build() == 2          # build directories don't count
+    (bench / "input.txt").write_text("x")
+    assert build() == 3          # a new file
+    (bench / "input.txt").write_text("y")
+    assert build() == 4          # an edited file
+    assert build() == 4
 
 
 def test_binary_without_stamp_is_rebuilt(tmp_path):

@@ -811,6 +811,31 @@ def _make_output_dir(d: Path) -> None:
             ignore.write_text("*\n")
 
 
+def _files_under(root: Path) -> List[Path]:
+    if root.is_file():
+        return [root]
+    found = []
+    for d, dirs, files in os.walk(root):
+        dirs[:] = sorted(x for x in dirs if not x.startswith("_build"))
+        found.extend(Path(d) / f for f in sorted(files))
+    return found
+
+
+def content_state(paths: List[Path]) -> Dict[str, str]:
+    """For a benchmark outside git: a hash of every file under paths, skipping
+    build directories (`_build*`), whose contents change with every build."""
+    def compute():
+        h = hashlib.sha256()
+        for root in paths:
+            for f in _files_under(root):
+                if f.is_file():
+                    rel = f.name if f == root else str(f.relative_to(root))
+                    h.update(os.fsencode(rel) + b"\0")
+                    h.update(hashlib.sha256(f.read_bytes()).digest())
+        return {"content": h.hexdigest()}
+    return _cached(("content",) + tuple(str(p) for p in paths), compute)
+
+
 def _stamp_path(out_binary: Path) -> Path:
     return Path(str(out_binary) + ".build-stamp")
 
@@ -832,6 +857,8 @@ def _stamp_change(old: Optional[Dict[str, str]], new: Dict[str, str]) -> str:
         changed.append("commit {} -> {}".format(old.get("commit"), new.get("commit")))
     if old.get("dirty") != new.get("dirty"):
         changed.append("uncommitted changes differ")
+    if old.get("content") != new.get("content"):
+        changed.append("files changed")
     return ", ".join(changed) or "build stamp differs"
 
 
@@ -911,15 +938,15 @@ class OCamlBuiltBinaryBenchmark(Benchmark):
         return (repo_top(self.benchmark_dir) or self.benchmark_dir) / "_build_status"
 
     def build_stamp(self, runtime: OCaml) -> Dict[str, str]:
-        """What the binary is built from: the runtime and, when the benchmark is
-        in a git repository, its commit and the uncommitted changes in the
-        benchmark's directory and build script."""
+        """What the binary is built from: the runtime and, in a git repository,
+        its commit and the uncommitted changes in the benchmark's directory and
+        build script; outside git, a hash of those files."""
         paths = [self.benchmark_dir.resolve()]
         script = self._resolve_build_script()
         if paths[0] not in script.parents:
             paths.append(script)
         stamp = {"runtime": runtime.get_build_identity()}
-        stamp.update(source_state(paths))
+        stamp.update(source_state(paths) or content_state(paths))
         return stamp
 
     def _run_build(self, runtime: OCaml, out_binary: Path):

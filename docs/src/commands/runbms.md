@@ -37,6 +37,7 @@ The directory ignores itself, so build outputs never show up in `git status`.
 Next to each binary, a `.build-stamp` file records what it was built from: the runtime, the repository's commit, and any uncommitted changes in the benchmark's directory.
 A binary is reused only when that still matches; otherwise it is rebuilt, with a warning saying what changed.
 Changes elsewhere in the repository count once they are committed.
+Outside git, the stamp records a hash of the files in the benchmark's directory instead, so changing any of them rebuilds the binary.
 A benchmark repository with `scripts/setup-stamp.sh` (e.g., macro-benches) is set up first: when its setup is stale or unfinished, `make setup` runs before any build.
 
 `--skip-build-failures`: run the benchmarks that built instead of stopping.

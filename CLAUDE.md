@@ -382,8 +382,10 @@ Post-conditions and caching:
   `get_build_identity()` (opam root name, else compiler identity) and, when the
   benchmark dir is in a git repo, its top level, `HEAD` and a hash of the
   uncommitted changes under the benchmark dir and its build script (`git diff
-  HEAD` + untracked non-ignored files; `""` when clean). Git state is read once
-  per process (`source_state`). An existing binary is reused only when its stamp
+  HEAD` + untracked non-ignored files; `""` when clean); outside git, `content`:
+  a hash of every file under the benchmark dir and build script, skipping
+  `_build*` dirs. Both are read once per process (`source_state`,
+  `content_state`). An existing binary is reused only when its stamp
   equals the current one; otherwise it is deleted and rebuilt (warning
   `Rebuilding ...: <what changed>`), as is a binary with no stamp.
   `always_build: true` always rebuilds. Uncommitted edits outside the benchmark
