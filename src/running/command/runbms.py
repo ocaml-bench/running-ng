@@ -1021,6 +1021,7 @@ def run(args):
                 configuration.save_to_file(fd)
         # The native emitter needs the raw dicts, before resolve_class replaces them.
         _raw_runtimes = dict(configuration.get("runtimes") or {})
+        _raw_modifiers = dict(configuration.get("modifiers") or {})
         requested_jobs = args.get("build_jobs")
         if not is_dry_run():
             with build_affinity():
@@ -1036,7 +1037,8 @@ def run(args):
             from running.contract import native as _native
             _native_emitter = _native.NativeEmitter(log_dir / "contract", run_id, _raw_runtimes,
                                                     comparisons=configuration.get("comparisons"),
-                                                    resume=bool(resume))
+                                                    resume=bool(resume),
+                                                    modifiers=_raw_modifiers)
             logging.info("native contract emission enabled (schema_version=%s) -> %s",
                          schema_version, log_dir / "contract")
         # Read from configuration, override with command line arguments if

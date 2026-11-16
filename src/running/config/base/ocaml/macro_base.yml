@@ -631,9 +631,11 @@ suites:
 modifiers:
   time_stats:
     type: Wrapper
+    measurement_only: true
     val: "/usr/bin/time -f \"%Uuser %Ssystem %eelapsed %PCPU (%Xavgtext+%Davgdata %Mmaxresident)k\""
   gc_verbose:
     type: OCamlRunParam
+    measurement_only: true
     val: "v=0x400"
   # runtime_events ring: e = log2 words per domain, d = max domains; file size is
   # d * 2^e * 8 bytes. re/md apply to sequential suites, re_par/md_par to lavyek only
@@ -698,6 +700,7 @@ modifiers:
   # on a single socket).
   pin_lavyek:
     type: CpuPin
+    measurement_only: true
     val: "0"
     one_node: true
     excludes: *non_lavyek_excludes
@@ -709,6 +712,7 @@ modifiers:
   # infer use pin_lavyek / pin_bench_mc instead.
   pin_bench:
     type: CpuPin
+    measurement_only: true
     bench_cores: "1"
     excludes: &unpinnable_excludes
       macro-lavyek-monorepo:
@@ -726,6 +730,7 @@ modifiers:
   # topology instead, so it goes through pin_lavyek.
   pin_bench_mc:
     type: CpuPin
+    measurement_only: true
     includes:
       macro-infer-monorepo:
         - infer_small
@@ -733,6 +738,7 @@ modifiers:
         - infer_large
   perf_grp1:
     type: PerfAndOllyAttach
+    measurement_only: true
     val: "task-clock,page-faults,cycles,instructions"
     # hwpmc event names, used instead of val by the freebsd-pmc backend. pmcstat is
     # all-or-nothing (one unresolvable name exits 71 with no output) and only
@@ -744,11 +750,13 @@ modifiers:
     val_freebsd: "instructions,unhalted-cycles,PAGE_FAULT.ALL"
   perf_grp2:
     type: PerfAndOllyAttach
+    measurement_only: true
     val: "task-clock,cycles,stalled-cycles-frontend,stalled-cycles-backend"
     # Approximations of perf's stalled-cycles-*; not comparable with Linux numbers.
     val_freebsd: "instructions,unhalted-cycles,idq_uops_not_delivered.core,resource_stalls.any"
   perf_grp3:
     type: PerfAndOllyAttach
+    measurement_only: true
     val: "task-clock,cycles,cache-misses,LLC-load-misses,dTLB-load-misses,iTLB-load-misses"
     # mem_load_uops_retired.l3_miss counts retired load uops, not requests: not comparable
     # with Linux LLC-load-misses. Do not add llc-misses: same counter as
@@ -760,6 +768,7 @@ modifiers:
   # Keep the list in sync when patching more benchmarks.
   memtrace_grp1:
     type: MemtraceAttach
+    measurement_only: true
     excludes: &non_decompress_excludes
       macro-menhir-monorepo: [menhir_ocamly, menhir_sql_parser, menhir_sysver]
       macro-cpdf-monorepo: [cpdf_merge, cpdf_blacktext, cpdf_scale, cpdf_squeeze]
